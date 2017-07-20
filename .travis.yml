@@ -1,0 +1,9 @@
+language: node_js
+node_js:
+  - "8"
+
+env:
+  - SNYK_TOKEN="698bcdaf-92de-4a07-bdb7-df4a3fc358b3"
+
+script:
+  - npm test

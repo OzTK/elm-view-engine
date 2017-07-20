@@ -1,0 +1,35 @@
+{
+  "name": "elm-template-engine",
+  "version": "0.1.0",
+  "description": "Template engine rendering elm views to a string. Made for Express",
+  "main": "index.js",
+  "scripts": {
+    "postinstall": "npm-run-all ts",
+    "ts": "tsc -p ./",
+    "snyk": "snyk test",
+    "mocha": "mocha",
+    "test": "npm-run-all snyk mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OzTK/elm-template-engine.git"
+  },
+  "keywords": [
+    "elm",
+    "nodejs",
+    "template",
+    "expressjs"
+  ],
+  "author": "Paul Duguet",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/OzTK/elm-template-engine/issues"
+  },
+  "homepage": "https://github.com/OzTK/elm-template-engine#readme",
+  "devDependencies": {
+    "mocha": "^3.4.2",
+    "npm-run-all": "^4.0.2",
+    "snyk": "^1.36.2",
+    "typescript": "^2.4.2"
+  }
+}

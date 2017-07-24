@@ -37,3 +37,6 @@ elm_stuff/
 # typescript
 *.js
 *.js.map
+
+# build
+lib

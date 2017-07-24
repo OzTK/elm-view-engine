@@ -32,7 +32,7 @@ node_modules/
 .env
 
 # elm
-elm_stuff/
+elm-stuff/
 
 # typescript
 *.js

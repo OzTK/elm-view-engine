@@ -4,14 +4,12 @@
   "description": "Template engine rendering elm views to a string. Made for Express",
   "main": "index.js",
   "scripts": {
-    "clean": "rimraf lib test/*.{js,js.map}",
+    "clean": "rimraf lib test/*.{js,js.map} src/*.{js,js.map}",
     "prebuild": "npm run clean",
-    "build": "tsc",
+    "build": "tsc -p .",
     "postbuild": "copyfiles package.json README.md LICENSE lib/",
-    "build:test": "tsc -p ./test",
     "snyk": "snyk test",
-    "mocha": "mocha test/*.js",
-    "test": "mocha"
+    "test": "mocha test/*.ts --compilers ts:ts-node/register"
   },
   "repository": {
     "type": "git",
@@ -31,6 +29,7 @@
   "homepage": "https://github.com/OzTK/elm-template-engine#readme",
   "devDependencies": {
     "@types/mocha": "^2.2.41",
+    "@types/node": "^8.0.15",
     "@types/should": "^8.3.0",
     "copyfiles": "^1.2.0",
     "mocha": "^3.4.2",
@@ -38,6 +37,8 @@
     "rimraf": "^2.6.1",
     "should": "^11.2.1",
     "snyk": "^1.36.2",
+    "standard": "^10.0.2",
+    "ts-node": "^3.2.1",
     "typescript": "^2.4.2"
   }
 }

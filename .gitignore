@@ -40,3 +40,5 @@ elm_stuff/
 
 # build
 lib
+
+.vscode

@@ -1,6 +1,7 @@
 import "mocha";
 import "should";
 
+import * as copy from "copyfiles";
 import * as fs from "fs";
 import * as path from "path";
 import * as rimraf from "rimraf";
@@ -9,15 +10,26 @@ import ElmTemplateEngine from "../src/elm-template-engine";
 
 const hbsTemplateFilePath = path.join(__dirname, "..", "src", "Main.elm.hbs");
 const hbsErrorTemplateFilePath = path.join(__dirname, "..", "src", "Main_notexists.elm.hbs");
-// const fixturesPath = path.join(__dirname, "fixtures");
+const fixturesPath = path.join(__dirname, "fixtures");
 
 describe("ElmTemplateEngine", () => {
   let engine: ElmTemplateEngine;
   let viewsDirPath: string;
 
-  before(() => {
+  before((done) => {
     engine = new ElmTemplateEngine();
-    viewsDirPath = fs.mkdtempSync("views");
+    viewsDirPath = path.join(process.cwd(), fs.mkdtempSync("views"));
+    const files = fs.readdirSync(fixturesPath);
+    copy(files
+        .filter((f) => f.endsWith(".elm"))
+        .map((f) => path.join(fixturesPath, f))
+        .concat([viewsDirPath]), true, (error: any) => {
+      if (error) {
+        return done(error);
+      }
+
+      done();
+    });
   });
 
   afterEach(() => {
@@ -32,8 +44,15 @@ describe("ElmTemplateEngine", () => {
     }
   });
 
-  after(() => {
-    rimraf(viewsDirPath, (err) => { err.toString(); /* It's fine */ });
+  after((done) => {
+    rimraf.sync(viewsDirPath);
+    rimraf(viewsDirPath, (err) => {
+       if (err) {
+         return done(err);
+       }
+
+       return done();
+    });
   });
 
   describe("#compile()", () => {

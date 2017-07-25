@@ -1,51 +1,40 @@
 module UsersView exposing (view)
 
-import Html exposing (Html, h1, div, ul, li, text, node)
-import Html.Attributes exposing (rel, href, src, id)
+import Html exposing (Html, body, h1, h3, header, div, ul, li, a, text, node, p)
+import Html.Attributes exposing (rel, href, src, id, class, charset, httpEquiv, name)
 import Json.Encode as JE
-import Users
-import ViewContext exposing (ViewContext)
-import Layout
 
 
 view : msg -> JE.Value -> Result String (Html msg)
 view msg rawCtx =
-    ViewContext.fromValue Users.flags rawCtx
-        |> Result.map (render msg)
-        |> Result.map (\r -> r rawCtx)
+    div [ id "app" ]
+        [ h1 [] [ text "My Page" ]
+        , p [] [ text "My Content" ]
+        ]
+        |> layout
+        |> Ok
 
 
-render : msg -> ViewContext Users.Flags -> JE.Value -> Html msg
-render msg ctx =
-    layout ctx <|
-        div [ id "app" ] [ Users.root (\_ -> msg) (ctx.context |> Users.init |> Tuple.first) ]
-
-
-layout : ViewContext Users.Flags -> Html msg -> JE.Value -> Html msg
-layout ctx content rawCtx =
-    Layout.view ctx.assets
-        (css ctx.assets.users.css)
-        (scripts ctx.assets.users.js rawCtx)
-        content
-
-
-css : Maybe String -> List (Html msg)
-css asset =
-    case asset of
-        Just css ->
-            [ node "link" [ rel "stylesheet", href css ] [] ]
-
-        Nothing ->
-            []
-
-
-scripts : Maybe String -> JE.Value -> List (Html msg)
-scripts asset rawCtx =
-    case asset of
-        Just js ->
-            [ node "script" [] [ text <| "var context = " ++ JE.encode 4 rawCtx ++ ".context;" ]
-            , node "script" [ src js ] []
-            ]
-
-        Nothing ->
-            []
+layout : Html.Html msg -> Html.Html msg
+layout content =
+    node "html"
+        []
+        [ node "head" [] <|
+            ([ node "meta" [ charset "utf-8" ] []
+             , node "meta" [ httpEquiv "X-UA-Compatible", Html.Attributes.content "dzn" ] []
+             , node "meta" [ name "viewport", Html.Attributes.content "width=device-width, initial-scale=1" ] []
+             , node "title" [] [ text "It works!!!" ]
+             ]
+            )
+        , body [] <|
+            ([ header []
+                [ h3 [] [ text "Welcome in my test view" ]
+                , ul []
+                    [ li [] [ a [ href "/" ] [ text "Home" ] ]
+                    , li [] [ a [ href "/users" ] [ text "Users" ] ]
+                    ]
+                ]
+             , div [] [ content ]
+             ]
+            )
+        ]

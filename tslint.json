@@ -4,6 +4,6 @@
         "tslint:recommended"
     ],
     "jsRules": {},
-    "rules": {},
+    "rules": { "arrow-parens": false },
     "rulesDirectory": []
 }

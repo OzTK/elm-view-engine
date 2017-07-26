@@ -29,6 +29,7 @@
   "homepage": "https://github.com/OzTK/elm-template-engine#readme",
   "devDependencies": {
     "@types/handlebars": "^4.0.34",
+    "@types/mkdirp": "^0.5.0",
     "@types/mocha": "^2.2.41",
     "@types/node": "^8.0.15",
     "@types/rimraf": "0.0.28",
@@ -44,6 +45,7 @@
     "typescript": "^2.4.2"
   },
   "dependencies": {
-    "handlebars": "^4.0.10"
+    "handlebars": "^4.0.10",
+    "mkdirp": "^0.5.1"
   }
 }

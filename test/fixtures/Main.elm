@@ -45,9 +45,10 @@ type alias Model =
 
 init : ( Model, Cmd msg )
 init =
-    ( [ OtherView.view
-      , UsersView.view
-      ]
+    ( Dict.fromList
+        [ ( "OtherView", OtherView.view NoOp )
+        , ( "UsersView", UsersView.view NoOp )
+        ]
     , Cmd.none
     )
 

@@ -10,6 +10,7 @@ install:
   - npm install
   - cd test/fixtures
   - elm-make --yes
+  - cd ../..
 
 script:
   - npm run-script snyk

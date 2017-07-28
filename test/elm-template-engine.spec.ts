@@ -3,6 +3,7 @@ import "should";
 
 import * as copy from "copyfiles";
 import * as fs from "fs";
+import { ncp } from "ncp";
 import * as path from "path";
 import * as rimraf from "rimraf";
 
@@ -26,22 +27,32 @@ describe("ElmTemplateEngine", () => {
       projectPath = path.join(process.cwd(), fs.mkdtempSync("fake_project_"));
       viewsDirPath = path.join(projectPath, "views");
 
+      engine = new ElmTemplateEngine(new Options(viewsDirPath, projectPath));
+
       const rdDir = path.join(projectPath, "invalid");
       fs.mkdirSync(rdDir);
 
       fs.mkdirSync(viewsDirPath);
 
-      const files = fs.readdirSync(fixturesPath);
-      copy(
-        files
-          .filter(f => f.endsWith("View.elm") && !f.endsWith("InvalidView.elm"))
-          .map(f => path.join(fixturesPath, f))
-          .concat([viewsDirPath]),
-        true,
-        handleCopyError(resolve, reject),
+      // Copying elm-stuff if it exists so that it won't
+      // trigger a dl of dependencies during tests (breaks CI build)
+      ncp(
+        path.join(fixturesPath, "elm-stuff"),
+        path.join(projectPath, "elm-stuff"),
+        () => {
+          const files = fs.readdirSync(fixturesPath);
+          copy(
+            files
+              .filter(
+                f => f.endsWith("View.elm") && !f.endsWith("InvalidView.elm"),
+              )
+              .map(f => path.join(fixturesPath, f))
+              .concat([viewsDirPath]),
+            true,
+            handleCopyError(resolve, reject),
+          );
+        },
       );
-
-      engine = new ElmTemplateEngine(new Options(viewsDirPath, projectPath));
     });
   });
 
@@ -201,8 +212,12 @@ describe("ElmTemplateEngine", () => {
       const otherActualView = await engine.getView("OtherView");
 
       // Assert
-      removeFormat(usersActualView).should.be.equal(removeFormat(usersExpectedView));
-      removeFormat(otherActualView).should.be.equal(removeFormat(otherExpectedView));
+      removeFormat(usersActualView).should.be.equal(
+        removeFormat(usersExpectedView),
+      );
+      removeFormat(otherActualView).should.be.equal(
+        removeFormat(otherExpectedView),
+      );
     });
 
     it("throws if an invalid context is provided", () => {
@@ -226,9 +241,7 @@ describe("ElmTemplateEngine", () => {
       // Test/Assert
       return engine
         .getView("HasContextView", context)
-        .should.eventually.be.equal(
-          removeFormat(contextExpectedView),
-        );
+        .should.eventually.be.equal(removeFormat(contextExpectedView));
     });
 
     const removeFormat = (html: string) =>

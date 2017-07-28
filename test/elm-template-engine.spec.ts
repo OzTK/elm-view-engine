@@ -40,40 +40,8 @@ describe("ElmTemplateEngine", () => {
         true,
         handleCopyError(resolve, reject),
       );
-    });
-  });
 
-  beforeEach(() => {
-    engine = new ElmTemplateEngine(new Options(viewsDirPath, projectPath));
-
-    // moving sample elm-package.json
-    return new Promise((resolve, reject) => {
-      copy(
-        [path.join(fixturesPath, "elm-package.json"), projectPath],
-        true,
-        handleCopyError(resolve, reject),
-      );
-
-      copy(
-        [path.join(fixturesPath, "InvalidView.elm"), path.join(projectPath, "invalid")],
-        true,
-        handleCopyError(resolve, reject),
-      );
-    });
-  });
-
-  afterEach(() => {
-    return new Promise(resolve => {
-      try {
-        fs.renameSync(hbsInexistentTemplateFilePath, hbsTemplateFilePath);
-      } catch (err) {
-        // Ignore the error
-      } finally {
-        rimraf.sync(ElmTemplateEngine.GENERATION_DIR_BASE_PATH);
-        rimraf(ElmTemplateEngine.GENERATION_DIR_BASE_PATH, () => {
-          resolve();
-        });
-      }
+      engine = new ElmTemplateEngine(new Options(viewsDirPath, projectPath));
     });
   });
 
@@ -91,17 +59,45 @@ describe("ElmTemplateEngine", () => {
   });
 
   describe("#compile()", () => {
+    beforeEach(() => {
+      engine = new ElmTemplateEngine(new Options(viewsDirPath, projectPath));
+
+      // moving sample elm-package.json
+      return new Promise((resolve, reject) => {
+        copy(
+          [path.join(fixturesPath, "elm-package.json"), projectPath],
+          true,
+          handleCopyError(resolve, reject),
+        );
+
+        copy(
+          [
+            path.join(fixturesPath, "InvalidView.elm"),
+            path.join(projectPath, "invalid"),
+          ],
+          true,
+          handleCopyError(resolve, reject),
+        );
+      });
+    });
+
     it("throws if no valid hbs template", () => {
       // Prepare
       // Temporarily renaming hbs file
       fs.renameSync(hbsTemplateFilePath, hbsInexistentTemplateFilePath);
 
+      // Test
+      const compiler = engine.compile();
+
+      // Cleanup
+      const cleanup = () =>
+        fs.renameSync(hbsInexistentTemplateFilePath, hbsTemplateFilePath);
+      compiler.then(cleanup).catch(cleanup);
+
       // Assert
-      return engine
-        .compile()
-        .should.be.rejectedWith(
-          /ENOENT: no such file or directory, open '(.*)(\.elm\.hbs)'/,
-        );
+      return compiler.should.be.rejectedWith(
+        /ENOENT: no such file or directory, open '(.*)(\.elm\.hbs)'/,
+      );
     });
 
     it("throws if the views dir doesn't exist", () => {
@@ -147,16 +143,96 @@ describe("ElmTemplateEngine", () => {
 
       // Assert
       worker.should.be.an.Object().and.have.property("ports");
-      worker.ports.should.be.an.Object().and.have.properties("getView", "receiveHtml");
+      worker.ports.should.be.an
+        .Object()
+        .and.have.properties("getView", "receiveHtml");
     }).timeout(30000);
   });
 
   describe("#getView()", () => {
-    it("should throw if templates were not compiled", () => true);
-    it("should throw if an empty name was provided", () => true);
-    it("should throw if the view doesn't exist", () => true);
-    it("should return the matching html, including the provided context", () =>
-      true);
+    before(function(this: Mocha.IHookCallbackContext) {
+      this.timeout(30000);
+      return engine.compile();
+    });
+
+    it("throws if templates were not compiled", () => {
+      // Prepare
+      const uncompiled = new ElmTemplateEngine(
+        new Options(viewsDirPath, projectPath),
+      );
+
+      return uncompiled
+        .getView("MyView")
+        .should.be.rejectedWith(
+          "Views need to be compiled before rendering them",
+        );
+    });
+
+    it("throws if no view name was provided", () => {
+      // Test/Assert
+      return engine
+        .getView("")
+        .should.be.rejectedWith("If you pass no name, you get no view!");
+
+      // Question of the day: How do I test something doable in js but not in ts ??
+      // engine.getView(null).should.be.rejectedWith(errMsg);
+      // engine.getView(undefined).should.be.rejectedWith(errMsg);
+    });
+
+    it("throws if the view doesn't exist", () => {
+      return engine
+        .getView("ViewDoesntExist")
+        .should.be.rejectedWith("View was not found");
+    });
+
+    it("returns the matching view that doesn't have a context", async () => {
+      // Prepare
+      const usersExpectedView = fs.readFileSync(
+        path.join(fixturesPath, "UsersView.html"),
+        "UTF-8",
+      );
+      const otherExpectedView = fs.readFileSync(
+        path.join(fixturesPath, "OtherView.html"),
+        "UTF-8",
+      );
+
+      // Test
+      const usersActualView = await engine.getView("UsersView");
+      const otherActualView = await engine.getView("OtherView");
+
+      // Assert
+      removeFormat(usersActualView).should.be.equal(removeFormat(usersExpectedView));
+      removeFormat(otherActualView).should.be.equal(removeFormat(otherExpectedView));
+    });
+
+    it("throws if an invalid context is provided", () => {
+      // Prepare
+      const fakeContext = { fakeProperty: "fakeValue" };
+
+      // Test/Assert
+      return engine
+        .getView("HasContextView", fakeContext)
+        .should.be.rejectedWith("Invalid context for this view");
+    });
+
+    it("should return the matching view rendering its context", () => {
+      // Prepare
+      const context = { simpleName: "test passed" };
+      const contextExpectedView = fs.readFileSync(
+        path.join(fixturesPath, "HasContextView.html"),
+        "UTF-8",
+      );
+
+      // Test/Assert
+      return engine
+        .getView("HasContextView", context)
+        .should.eventually.be.equal(
+          removeFormat(contextExpectedView),
+        );
+    });
+
+    const removeFormat = (html: string) =>
+      html.replace(/[\n\r\t]*/g, "").replace(/>[ ]+</g, "><");
   });
 });
 

@@ -7,6 +7,8 @@ import * as hbs from "handlebars";
 import * as compiler from "node-elm-compiler";
 
 import Options from "./elm-template-options";
+import ViewParams from "./view-params";
+import ViewResult from "./view-result";
 
 export default class ElmTemplateEngine {
   public static readonly GENERATION_DIR_BASE_PATH = path.join(
@@ -27,9 +29,9 @@ export default class ElmTemplateEngine {
       this.ensureTempDirStructure(),
     ])
       .then(async result => {
-        const elmCode = await this.compileAndOutputTemplate.apply(
-          this,
-          result.slice(0, 2),
+        const elmCode = await this.compileAndOutputTemplate(
+          result[0],
+          result[1],
         );
         const modulePath = await this.saveMainElmFile(result[2], elmCode);
         this.worker = await this.compileElmModule(this.options, modulePath);
@@ -44,14 +46,28 @@ export default class ElmTemplateEngine {
       });
   }
 
-  public getView(name: string, context: any): Promise<string> {
-    name.toString();
-    context.toString();
+  public getView(name: string, context?: any): Promise<string> {
+    const self = this;
     return new Promise((resolve, reject) => {
-      resolve.toString();
-      reject("");
+      if (!self.worker) {
+        return reject(new Error("Views need to be compiled before rendering them"));
+      }
+
+      if (!name || name === "") {
+        return reject(new Error("If you pass no name, you get no view!"));
+      }
+
+      const ports = self.worker.ports;
+      const resultHandler = self.handleViewResult;
+
+      ports.receiveHtml.subscribe(
+        resultHandler(resolve, reject, ports.receiveHtml),
+      );
+      ports.getView.send(new ViewParams(0, name, context));
     });
   }
+
+  // Compilation
 
   private cleanGenerated(): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -175,7 +191,9 @@ export default class ElmTemplateEngine {
     } catch (err) {
       // Throwing a human readable message as the compiler
       // will only return a vague process error message
-      throw new Error("One or more views don't compile. You should check your elm code!");
+      throw new Error(
+        "One or more views don't compile. You should check your elm code!",
+      );
     }
   }
 
@@ -220,5 +238,21 @@ export default class ElmTemplateEngine {
         },
       );
     });
+  }
+
+  // View rendering
+
+  private handleViewResult(
+    resolve: (res: string) => void,
+    reject: (reason?: any) => void,
+    port: any,
+  ) {
+    return (view: ViewResult) => {
+      port.unsubscribe(this);
+      if (view.error) {
+        return reject(new Error(view.error));
+      }
+      return resolve(view.html);
+    };
   }
 }

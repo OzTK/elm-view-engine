@@ -10,10 +10,8 @@ import ElmTemplateEngine from "../src/elm-template-engine";
 import Options from "../src/elm-template-options";
 
 const hbsTemplateFilePath = path.join(__dirname, "..", "src", "Main.elm.hbs");
-const hbsErrorTemplateFilePath = path.join(
-  __dirname,
-  "..",
-  "src",
+const hbsInexistentTemplateFilePath = path.join(
+  path.dirname(hbsTemplateFilePath),
   "Main_notexists.elm.hbs",
 );
 const fixturesPath = path.join(__dirname, "fixtures");
@@ -21,10 +19,18 @@ const fixturesPath = path.join(__dirname, "fixtures");
 describe("ElmTemplateEngine", () => {
   let engine: ElmTemplateEngine;
   let viewsDirPath: string;
+  let projectPath: string;
 
   before(() => {
     return new Promise((resolve, reject) => {
-      viewsDirPath = path.join(process.cwd(), fs.mkdtempSync("views"));
+      projectPath = path.join(process.cwd(), fs.mkdtempSync("fake_project_"));
+      viewsDirPath = path.join(projectPath, "views");
+
+      const rdDir = path.join(projectPath, "invalid");
+      fs.mkdirSync(rdDir);
+
+      fs.mkdirSync(viewsDirPath);
+
       const files = fs.readdirSync(fixturesPath);
       copy(
         files
@@ -32,30 +38,39 @@ describe("ElmTemplateEngine", () => {
           .map(f => path.join(fixturesPath, f))
           .concat([viewsDirPath]),
         true,
-        error => {
-          if (error) {
-            return reject(error);
-          }
-
-          return resolve();
-        },
+        handleCopyError(resolve, reject),
       );
     });
   });
 
   beforeEach(() => {
-    engine = new ElmTemplateEngine(new Options(viewsDirPath));
+    engine = new ElmTemplateEngine(new Options(viewsDirPath, projectPath));
+
+    // moving sample elm-package.json
+    return new Promise((resolve, reject) => {
+      copy(
+        [path.join(fixturesPath, "elm-package.json"), projectPath],
+        true,
+        handleCopyError(resolve, reject),
+      );
+
+      copy(
+        [path.join(fixturesPath, "InvalidView.elm"), path.join(projectPath, "invalid")],
+        true,
+        handleCopyError(resolve, reject),
+      );
+    });
   });
 
   afterEach(() => {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       try {
-        fs.renameSync(hbsErrorTemplateFilePath, hbsTemplateFilePath);
+        fs.renameSync(hbsInexistentTemplateFilePath, hbsTemplateFilePath);
       } catch (err) {
         // Ignore the error
       } finally {
-        rimraf.sync(ElmTemplateEngine.GENERATION_DIR_PATH);
-        rimraf(ElmTemplateEngine.GENERATION_DIR_PATH, () => {
+        rimraf.sync(ElmTemplateEngine.GENERATION_DIR_BASE_PATH);
+        rimraf(ElmTemplateEngine.GENERATION_DIR_BASE_PATH, () => {
           resolve();
         });
       }
@@ -64,8 +79,8 @@ describe("ElmTemplateEngine", () => {
 
   after(() => {
     return new Promise((resolve, reject) => {
-      rimraf.sync(viewsDirPath);
-      rimraf(viewsDirPath, err => {
+      rimraf.sync(projectPath);
+      rimraf(projectPath, err => {
         if (err) {
           return reject(err);
         }
@@ -77,8 +92,11 @@ describe("ElmTemplateEngine", () => {
 
   describe("#compile()", () => {
     it("throws if no valid hbs template", () => {
+      // Prepare
       // Temporarily renaming hbs file
-      fs.renameSync(hbsTemplateFilePath, hbsErrorTemplateFilePath);
+      fs.renameSync(hbsTemplateFilePath, hbsInexistentTemplateFilePath);
+
+      // Assert
       return engine
         .compile()
         .should.be.rejectedWith(
@@ -87,7 +105,11 @@ describe("ElmTemplateEngine", () => {
     });
 
     it("throws if the views dir doesn't exist", () => {
-      engine = new ElmTemplateEngine(); // The default views folder does not exists
+      // Prepare
+      // The default views folder does not exists
+      engine = new ElmTemplateEngine();
+
+      // Assert
       return engine
         .compile()
         .should.be.rejectedWith(
@@ -96,6 +118,10 @@ describe("ElmTemplateEngine", () => {
     });
 
     it("throws if there is no project's elm-package.json", () => {
+      // Prepare
+      fs.unlinkSync(path.join(projectPath, "elm-package.json"));
+
+      // Test/Assert
       return engine
         .compile()
         .should.be.rejectedWith(
@@ -103,23 +129,26 @@ describe("ElmTemplateEngine", () => {
         );
     });
 
-    it("generates a Main.elm file", async () => {
-      // Preparing
-      const expected = fs.readFileSync(path.join(fixturesPath, "Main.elm"), "UTF-8");
+    it("throws if outputed elm doesn't compile", () => {
+      // Prepare
+      fs.unlinkSync(path.join(projectPath, "invalid", "InvalidView.elm"));
 
-      // Testing
-      const outFile = await engine.compile();
-      const fileContent = fs.readFileSync(outFile, "UTF-8");
+      // Test/Assert
+      return engine
+        .compile()
+        .should.be.rejectedWith(
+          "One or more views don't compile. You should check your elm code!",
+        );
+    }).timeout(30000); // If dependencies have to be downloaded it might take some time
 
-      // Asserting
-      outFile.should.be.equal(ElmTemplateEngine.ELM_MODULE_PATH);
-      fs.existsSync(outFile).should.be.true();
-      fileContent.should.match(expected);
-    });
+    it("compiles to valid elm code and start a worker", async () => {
+      // Test
+      const worker = await engine.compile();
 
-    it("throws if outputed elm doesn't compile", () => true);
-
-    it("compiles to valid elm code and start a worker", () => true);
+      // Assert
+      worker.should.be.an.Object().and.have.property("ports");
+      worker.ports.should.be.an.Object().and.have.properties("getView", "receiveHtml");
+    }).timeout(30000);
   });
 
   describe("#getView()", () => {
@@ -130,3 +159,15 @@ describe("ElmTemplateEngine", () => {
       true);
   });
 });
+
+function handleCopyError(
+  resolve: (value?: {} | PromiseLike<{}>) => void,
+  reject: (reason?: any) => void,
+) {
+  return (error: any) => {
+    if (error) {
+      return reject(error);
+    }
+    return resolve();
+  };
+}

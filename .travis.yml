@@ -5,6 +5,9 @@ node_js:
 env:
   - SNYK_TOKEN="698bcdaf-92de-4a07-bdb7-df4a3fc358b3"
 
+install:
+  - npm install --no-package-lock
+
 script:
   - npm run-script snyk
   - npm test

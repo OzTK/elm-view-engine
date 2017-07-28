@@ -9,7 +9,7 @@ install:
   - npm i -g elm
   - npm install
   - cd test/fixtures
-  - elm-make
+  - elm-make --yes
 
 script:
   - npm run-script snyk

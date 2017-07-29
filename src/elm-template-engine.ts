@@ -1,5 +1,6 @@
 import * as fs from "fs";
 import * as mkdirp from "mkdirp";
+import { ncp } from "ncp";
 import * as path from "path";
 import * as rimraf from "rimraf";
 
@@ -29,11 +30,12 @@ export default class ElmTemplateEngine {
       this.ensureTempDirStructure(),
     ])
       .then(async result => {
-        const elmCode = await this.compileAndOutputTemplate(
-          result[0],
-          result[1],
-        );
+        const depsCopy = this.copyDependenciesFromProject(result[2]);
+        const elmCode = this.compileAndOutputTemplate(result[0], result[1]);
         const modulePath = await this.saveMainElmFile(result[2], elmCode);
+
+        // Waiting for dependencies to be copied before compiling
+        await depsCopy;
         this.worker = await this.compileElmModule(this.options, modulePath);
 
         this.cleanGenerated();
@@ -50,10 +52,12 @@ export default class ElmTemplateEngine {
     const self = this;
     return new Promise((resolve, reject) => {
       if (!self.worker) {
-        return reject(new Error("Views need to be compiled before rendering them"));
+        return reject(
+          new Error("Views need to be compiled before rendering them"),
+        );
       }
 
-      if (!name || name === "") {
+      if (!name || name === "") {
         return reject(new Error("If you pass no name, you get no view!"));
       }
 
@@ -133,6 +137,20 @@ export default class ElmTemplateEngine {
           return resolve(dir);
         });
       });
+    });
+  }
+
+  private copyDependenciesFromProject(generatedPath: string): Promise<void> {
+    return new Promise(resolve => {
+      ncp(
+        path.join(this.options.projectRoot, "elm-stuff"),
+        path.join(generatedPath, "elm-stuff"),
+        () => {
+          // Not handling the error as it just means
+          // dependencies will be downloaded
+          resolve();
+        },
+      );
     });
   }
 

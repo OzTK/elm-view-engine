@@ -42,3 +42,6 @@ elm-stuff/
 lib
 
 .vscode
+
+# elm-server-side-renderer
+!src/elm-server-side-renderer/src/Native/ServerSideHelper.js

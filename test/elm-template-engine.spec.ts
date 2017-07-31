@@ -7,8 +7,8 @@ import { ncp } from "ncp";
 import * as path from "path";
 import * as rimraf from "rimraf";
 
-import ElmTemplateEngine from "../src/elm-template-engine";
-import Options from "../src/elm-template-options";
+import ElmViewEngine from "../src/elm-view-engine";
+import Options from "../src/elm-view-options";
 
 const hbsTemplateFilePath = path.join(__dirname, "..", "src", "Main.elm.hbs");
 const hbsInexistentTemplateFilePath = path.join(
@@ -17,8 +17,8 @@ const hbsInexistentTemplateFilePath = path.join(
 );
 const fixturesPath = path.join(__dirname, "fixtures");
 
-describe("ElmTemplateEngine", () => {
-  let engine: ElmTemplateEngine;
+describe("ElmViewEngine", () => {
+  let engine: ElmViewEngine;
   let viewsDirPath: string;
   let projectPath: string;
 
@@ -27,7 +27,7 @@ describe("ElmTemplateEngine", () => {
       projectPath = path.join(process.cwd(), fs.mkdtempSync("fake_project_"));
       viewsDirPath = path.join(projectPath, "views");
 
-      engine = new ElmTemplateEngine(new Options(viewsDirPath, projectPath));
+      engine = new ElmViewEngine(new Options(viewsDirPath, projectPath));
 
       const rdDir = path.join(projectPath, "invalid");
       fs.mkdirSync(rdDir);
@@ -71,7 +71,7 @@ describe("ElmTemplateEngine", () => {
 
   describe("#compile()", () => {
     beforeEach(() => {
-      engine = new ElmTemplateEngine(new Options(viewsDirPath, projectPath));
+      engine = new ElmViewEngine(new Options(viewsDirPath, projectPath));
 
       // moving sample elm-package.json
       return new Promise((resolve, reject) => {
@@ -114,7 +114,7 @@ describe("ElmTemplateEngine", () => {
     it("throws if the views dir doesn't exist", () => {
       // Prepare
       // The default views folder does not exists
-      engine = new ElmTemplateEngine();
+      engine = new ElmViewEngine();
 
       // Assert
       return engine
@@ -168,7 +168,7 @@ describe("ElmTemplateEngine", () => {
 
     it("throws if templates were not compiled", () => {
       // Prepare
-      const uncompiled = new ElmTemplateEngine(
+      const uncompiled = new ElmViewEngine(
         new Options(viewsDirPath, projectPath),
       );
 
@@ -230,7 +230,7 @@ describe("ElmTemplateEngine", () => {
         .should.be.rejectedWith("Invalid context for this view");
     });
 
-    it("should return the matching view rendering its context", () => {
+    it("returns the matching view rendering its context", () => {
       // Prepare
       const context = { simpleName: "test passed" };
       const contextExpectedView = fs.readFileSync(

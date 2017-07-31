@@ -7,11 +7,11 @@ import * as rimraf from "rimraf";
 import * as hbs from "handlebars";
 import * as compiler from "node-elm-compiler";
 
-import Options from "./elm-template-options";
+import Options from "./elm-view-options";
 import ViewParams from "./view-params";
 import ViewResult from "./view-result";
 
-export default class ElmTemplateEngine {
+export default class ElmViewEngine {
   public static readonly GENERATION_DIR_BASE_PATH = path.join(
     __dirname,
     "generated",
@@ -75,7 +75,7 @@ export default class ElmTemplateEngine {
 
   private cleanGenerated(): Promise<void> {
     return new Promise((resolve, reject) => {
-      rimraf(ElmTemplateEngine.GENERATION_DIR_BASE_PATH + "*", err2 => {
+      rimraf(ElmViewEngine.GENERATION_DIR_BASE_PATH + "*", err2 => {
         if (err2) {
           return reject(
             new Error(
@@ -103,7 +103,7 @@ export default class ElmTemplateEngine {
   private readTemplate(): Promise<string> {
     return new Promise((resolve, reject) => {
       fs.readFile(
-        ElmTemplateEngine.TEMPLATE_PATH,
+        ElmViewEngine.TEMPLATE_PATH,
         "UTF-8",
         (errReadTpl, content) => {
           if (errReadTpl) {
@@ -125,12 +125,12 @@ export default class ElmTemplateEngine {
 
   private ensureTempDirStructure(): Promise<string> {
     return new Promise<string>((resolve, reject) => {
-      mkdirp(path.dirname(ElmTemplateEngine.GENERATION_DIR_BASE_PATH), err => {
+      mkdirp(path.dirname(ElmViewEngine.GENERATION_DIR_BASE_PATH), err => {
         if (err) {
           return reject(err);
         }
 
-        fs.mkdtemp(ElmTemplateEngine.GENERATION_DIR_BASE_PATH, (err2, dir) => {
+        fs.mkdtemp(ElmViewEngine.GENERATION_DIR_BASE_PATH, (err2, dir) => {
           if (err2) {
             return reject(err);
           }

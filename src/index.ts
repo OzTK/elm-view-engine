@@ -1,3 +1,3 @@
-import ElmTemplateEngine from "./elm-template-engine";
+import ElmTemplateEngine from "./elm-view-engine";
 
 export default ElmTemplateEngine;

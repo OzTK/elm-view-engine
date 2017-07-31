@@ -20,6 +20,8 @@ export default class ElmViewEngine {
   private static readonly TEMPLATE_PATH = path.join(__dirname, "Main.elm.hbs");
 
   private worker: ElmComponent<any>;
+  private getViewRequests: Array<((view: ViewResult) => void) | undefined> = [];
+  private requestsRecyclingPool: number[] = [];
 
   constructor(private options: Options = new Options()) {}
 
@@ -38,12 +40,12 @@ export default class ElmViewEngine {
         await depsCopy;
         this.worker = await this.compileElmModule(this.options, modulePath);
 
-        this.cleanGenerated();
+        await this.cleanGenerated();
 
         return this.worker;
       })
-      .catch(err => {
-        this.cleanGenerated();
+      .catch(async (err) => {
+        await this.cleanGenerated();
         throw err;
       });
   }
@@ -59,14 +61,10 @@ export default class ElmViewEngine {
       if (!name || name === "") {
         return reject(new Error("If you pass no name, you get no view!"));
       }
-
-      const ports = this.worker.ports;
-      const resultHandler = this.handleViewResult;
-
-      ports.receiveHtml.subscribe(
-        resultHandler(resolve, reject, ports.receiveHtml),
-      );
-      ports.getView.send(new ViewParams(0, name, context));
+      
+      const id = this.createRequestHandler(resolve, reject, this.worker.ports.receiveHtml);
+      this.worker.ports.receiveHtml.subscribe(this.getViewRequests[id]);
+      this.worker.ports.getView.send(new ViewParams(id, name, context));
     });
   }
 
@@ -258,17 +256,31 @@ export default class ElmViewEngine {
 
   // View rendering
 
-  private handleViewResult(
+  private createRequestHandler(
     resolve: (res: string) => void,
     reject: (reason?: any) => void,
     port: any,
-  ) {
-    return (view: ViewResult) => {
-      port.unsubscribe(this);
+  ): number {
+    const recycledId = this.requestsRecyclingPool.shift();
+    const reqId = recycledId !== undefined ? recycledId : this.getViewRequests.length;
+
+    const cb = (view: ViewResult) => {
+      if (view.id !== reqId) {
+        return;
+      }
+
+      this.requestsRecyclingPool.push(reqId);
+      this.getViewRequests[reqId] = undefined;
+
+      port.unsubscribe(cb);
       if (view.error) {
         return reject(new Error(view.error));
       }
       return resolve(view.html);
     };
+
+    this.getViewRequests[reqId] = cb;
+
+    return reqId;
   }
 }

@@ -104,6 +104,8 @@ describe("ElmViewEngine", () => {
         .Object()
         .and.have.properties("getView", "receiveHtml");
     }).timeout(COMPILE_TIMEOUT);
+
+    it("deletes generated code assets");
   });
 
   describe("#getView()", () => {

@@ -146,7 +146,7 @@ describe("ElmTemplateEngine", () => {
         .should.be.rejectedWith(
           "One or more views don't compile. You should check your elm code!",
         );
-    }).timeout(30000); // If dependencies have to be downloaded it might take some time
+    }).timeout(300000); // If dependencies have to be downloaded it might take some time
 
     it("compiles to valid elm code and start a worker", async () => {
       // Test
@@ -157,12 +157,12 @@ describe("ElmTemplateEngine", () => {
       worker.ports.should.be.an
         .Object()
         .and.have.properties("getView", "receiveHtml");
-    }).timeout(30000);
+    }).timeout(300000);
   });
 
   describe("#getView()", () => {
     before(function(this: Mocha.IHookCallbackContext) {
-      this.timeout(30000);
+      this.timeout(300000);
       return engine.compile();
     });
 

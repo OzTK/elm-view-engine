@@ -49,9 +49,8 @@ export default class ElmViewEngine {
   }
 
   public getView(name: string, context?: any): Promise<string> {
-    const self = this;
     return new Promise((resolve, reject) => {
-      if (!self.worker) {
+      if (!this.worker) {
         return reject(
           new Error("Views need to be compiled before rendering them"),
         );
@@ -61,8 +60,8 @@ export default class ElmViewEngine {
         return reject(new Error("If you pass no name, you get no view!"));
       }
 
-      const ports = self.worker.ports;
-      const resultHandler = self.handleViewResult;
+      const ports = this.worker.ports;
+      const resultHandler = this.handleViewResult;
 
       ports.receiveHtml.subscribe(
         resultHandler(resolve, reject, ports.receiveHtml),
@@ -177,11 +176,10 @@ export default class ElmViewEngine {
     const projConfig = await this.loadElmPackageConfig(options.projectRoot);
     const myConfig = await this.loadElmPackageConfig(__dirname);
 
-    myConfig.dependencies = Object.assign(
-      {},
-      projConfig.dependencies,
-      myConfig.dependencies,
-    );
+    myConfig.dependencies = {
+      ...projConfig.dependencies,
+      ...myConfig.dependencies,
+    };
 
     myConfig["source-directories"].push(
       ...projConfig["source-directories"].map((dep: string) =>

@@ -1,108 +1,54 @@
 import "mocha";
 import "should";
 
-import * as copy from "copyfiles";
 import * as fs from "fs";
-import { ncp } from "ncp";
 import * as path from "path";
-import * as rimraf from "rimraf";
+
+import MockProjectHelper from "./mock-project-helper";
 
 import ElmViewEngine from "../src/elm-view-engine";
 import Options from "../src/elm-view-options";
 
-const hbsTemplateFilePath = path.join(__dirname, "..", "src", "Main.elm.hbs");
-const hbsInexistentTemplateFilePath = path.join(
-  path.dirname(hbsTemplateFilePath),
+const HBS_TEMPLATE_PATH = path.join(__dirname, "..", "src", "Main.elm.hbs");
+const HBS_NONEXISTENT_TEMPLATE_PATH = path.join(
+  path.dirname(HBS_TEMPLATE_PATH),
   "Main_notexists.elm.hbs",
 );
-const fixturesPath = path.join(__dirname, "fixtures");
+const FIXTURES_PATH = path.join(__dirname, "fixtures");
+const COMPILE_TIMEOUT = 1800000;
 
 describe("ElmViewEngine", () => {
   let engine: ElmViewEngine;
-  let viewsDirPath: string;
-  let projectPath: string;
+  let mockHelper: MockProjectHelper;
 
-  before(() => {
-    return new Promise((resolve, reject) => {
-      projectPath = path.join(process.cwd(), fs.mkdtempSync("fake_project_"));
-      viewsDirPath = path.join(projectPath, "views");
-
-      engine = new ElmViewEngine(new Options(viewsDirPath, projectPath));
-
-      const rdDir = path.join(projectPath, "invalid");
-      fs.mkdirSync(rdDir);
-
-      fs.mkdirSync(viewsDirPath);
-
-      // Copying elm-stuff if it exists so that it won't
-      // trigger a dl of dependencies during tests (breaks CI build)
-      ncp(
-        path.join(fixturesPath, "elm-stuff"),
-        path.join(projectPath, "elm-stuff"),
-        () => {
-          const files = fs.readdirSync(fixturesPath);
-          copy(
-            files
-              .filter(
-                f => f.endsWith("View.elm") && !f.endsWith("InvalidView.elm"),
-              )
-              .map(f => path.join(fixturesPath, f))
-              .concat([viewsDirPath]),
-            true,
-            handleCopyError(resolve, reject),
-          );
-        },
-      );
-    });
+  before(async () => {
+    mockHelper = await MockProjectHelper.createProject(FIXTURES_PATH);
+    engine = new ElmViewEngine(
+      new Options(mockHelper.viewsPath, mockHelper.projectPath),
+    );
   });
 
   after(() => {
-    return new Promise((resolve, reject) => {
-      rimraf.sync(projectPath);
-      rimraf(projectPath, err => {
-        if (err) {
-          return reject(err);
-        }
-
-        return resolve();
-      });
-    });
+    return mockHelper.deleteProject();
   });
 
   describe("#compile()", () => {
-    beforeEach(() => {
-      engine = new ElmViewEngine(new Options(viewsDirPath, projectPath));
-
-      // moving sample elm-package.json
-      return new Promise((resolve, reject) => {
-        copy(
-          [path.join(fixturesPath, "elm-package.json"), projectPath],
-          true,
-          handleCopyError(resolve, reject),
-        );
-
-        copy(
-          [
-            path.join(fixturesPath, "InvalidView.elm"),
-            path.join(projectPath, "invalid"),
-          ],
-          true,
-          handleCopyError(resolve, reject),
-        );
-      });
+    afterEach(function(this: Mocha.IHookCallbackContext) {
+      // this.timeout(30000);
+      return mockHelper.restoreFiles();
     });
 
     it("throws if no valid hbs template", () => {
       // Prepare
       // Temporarily renaming hbs file
-      fs.renameSync(hbsTemplateFilePath, hbsInexistentTemplateFilePath);
+      fs.renameSync(HBS_TEMPLATE_PATH, HBS_NONEXISTENT_TEMPLATE_PATH);
 
       // Test
       const compiler = engine.compile();
 
       // Cleanup
       const cleanup = () =>
-        fs.renameSync(hbsInexistentTemplateFilePath, hbsTemplateFilePath);
+        fs.renameSync(HBS_NONEXISTENT_TEMPLATE_PATH, HBS_TEMPLATE_PATH);
       compiler.then(cleanup).catch(cleanup);
 
       // Assert
@@ -114,19 +60,19 @@ describe("ElmViewEngine", () => {
     it("throws if the views dir doesn't exist", () => {
       // Prepare
       // The default views folder does not exists
-      engine = new ElmViewEngine();
-
-      // Assert
-      return engine
-        .compile()
-        .should.be.rejectedWith(
-          /ENOENT: no such file or directory, scandir '(.*)'/,
-        );
+      return mockHelper.deleteViewsDir().then(() =>
+        // Test/Assert
+        engine
+          .compile()
+          .should.be.rejectedWith(
+            /ENOENT: no such file or directory, scandir '(.*)'/,
+          ),
+      );
     });
 
     it("throws if there is no project's elm-package.json", () => {
       // Prepare
-      fs.unlinkSync(path.join(projectPath, "elm-package.json"));
+      mockHelper.deletePackageConfigSync();
 
       // Test/Assert
       return engine
@@ -138,7 +84,7 @@ describe("ElmViewEngine", () => {
 
     it("throws if outputed elm doesn't compile", () => {
       // Prepare
-      fs.unlinkSync(path.join(projectPath, "invalid", "InvalidView.elm"));
+      mockHelper.deleteExternalViewSync();
 
       // Test/Assert
       return engine
@@ -146,7 +92,7 @@ describe("ElmViewEngine", () => {
         .should.be.rejectedWith(
           "One or more views don't compile. You should check your elm code!",
         );
-    }).timeout(300000); // If dependencies have to be downloaded it might take some time
+    }).timeout(COMPILE_TIMEOUT); // If dependencies have to be downloaded it might take some time
 
     it("compiles to valid elm code and start a worker", async () => {
       // Test
@@ -157,20 +103,18 @@ describe("ElmViewEngine", () => {
       worker.ports.should.be.an
         .Object()
         .and.have.properties("getView", "receiveHtml");
-    }).timeout(3000000);
+    }).timeout(COMPILE_TIMEOUT);
   });
 
   describe("#getView()", () => {
     before(function(this: Mocha.IHookCallbackContext) {
-      this.timeout(3000000);
+      this.timeout(COMPILE_TIMEOUT);
       return engine.compile();
     });
 
     it("throws if templates were not compiled", () => {
       // Prepare
-      const uncompiled = new ElmViewEngine(
-        new Options(viewsDirPath, projectPath),
-      );
+      const uncompiled = new ElmViewEngine();
 
       return uncompiled
         .getView("MyView")
@@ -199,11 +143,11 @@ describe("ElmViewEngine", () => {
     it("returns the matching view that doesn't have a context", async () => {
       // Prepare
       const usersExpectedView = fs.readFileSync(
-        path.join(fixturesPath, "UsersView.html"),
+        path.join(FIXTURES_PATH, "UsersView.html"),
         "UTF-8",
       );
       const otherExpectedView = fs.readFileSync(
-        path.join(fixturesPath, "OtherView.html"),
+        path.join(FIXTURES_PATH, "OtherView.html"),
         "UTF-8",
       );
 
@@ -234,7 +178,7 @@ describe("ElmViewEngine", () => {
       // Prepare
       const context = { simpleName: "test passed" };
       const contextExpectedView = fs.readFileSync(
-        path.join(fixturesPath, "HasContextView.html"),
+        path.join(FIXTURES_PATH, "HasContextView.html"),
         "UTF-8",
       );
 
@@ -244,19 +188,35 @@ describe("ElmViewEngine", () => {
         .should.eventually.be.equal(removeFormat(contextExpectedView));
     });
 
+    it("returns the right view for the right context", async () => {
+      // Prepare
+      const contexts: Array<{ simpleName: string }> = [
+        "paul",
+        "mary",
+        "matthew",
+        "john",
+        "fred",
+        "julien",
+        "aurelia",
+        "harry",
+        "anne",
+        "end",
+      ].map(name => ({
+        simpleName: name,
+      }));
+
+      // Test/Assert
+      return Promise.all(
+        contexts.map(c =>
+          engine
+            .getView("HasContextView", c)
+            .should.eventually.be.a.String()
+            .which.containEql(c.simpleName),
+        ),
+      );
+    });
+
     const removeFormat = (html: string) =>
       html.replace(/[\n\r\t]*/g, "").replace(/>[ ]+</g, "><");
   });
 });
-
-function handleCopyError(
-  resolve: (value?: {} | PromiseLike<{}>) => void,
-  reject: (reason?: any) => void,
-) {
-  return (error: any) => {
-    if (error) {
-      return reject(error);
-    }
-    return resolve();
-  };
-}

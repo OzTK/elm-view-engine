@@ -157,12 +157,12 @@ describe("ElmTemplateEngine", () => {
       worker.ports.should.be.an
         .Object()
         .and.have.properties("getView", "receiveHtml");
-    }).timeout(300000);
+    }).timeout(3000000);
   });
 
   describe("#getView()", () => {
     before(function(this: Mocha.IHookCallbackContext) {
-      this.timeout(300000);
+      this.timeout(3000000);
       return engine.compile();
     });
 

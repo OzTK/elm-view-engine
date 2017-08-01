@@ -22,10 +22,16 @@ export default class ElmViewEngine {
   private worker: ElmComponent<any>;
   private getViewRequests: Array<((view: ViewResult) => void) | undefined> = [];
   private requestsRecyclingPool: number[] = [];
+  private isFaulty = false;
 
-  constructor(private options: Options = new Options()) {}
+  public get options(): Options {
+    return this._options;
+  }
+
+  constructor(private _options: Options = new Options()) {}
 
   public compile(): Promise<ElmComponent<any>> {
+    this.isFaulty = false;
     return Promise.all<string[], string, string>([
       this.readViewsDir(),
       this.readTemplate(),
@@ -38,13 +44,14 @@ export default class ElmViewEngine {
 
         // Waiting for dependencies to be copied before compiling
         await depsCopy;
-        this.worker = await this.compileElmModule(this.options, modulePath);
+        this.worker = await this.compileElmModule(this._options, modulePath);
 
         await this.cleanGenerated();
 
         return this.worker;
       })
-      .catch(async (err) => {
+      .catch(async err => {
+        this.isFaulty = true;
         await this.cleanGenerated();
         throw err;
       });
@@ -52,7 +59,7 @@ export default class ElmViewEngine {
 
   public getView(name: string, context?: any): Promise<string> {
     return new Promise((resolve, reject) => {
-      if (!this.worker) {
+      if (!this.worker || this.isFaulty) {
         return reject(
           new Error("Views need to be compiled before rendering them"),
         );
@@ -61,8 +68,12 @@ export default class ElmViewEngine {
       if (!name || name === "") {
         return reject(new Error("If you pass no name, you get no view!"));
       }
-      
-      const id = this.createRequestHandler(resolve, reject, this.worker.ports.receiveHtml);
+
+      const id = this.createRequestHandler(
+        resolve,
+        reject,
+        this.worker.ports.receiveHtml,
+      );
       this.worker.ports.receiveHtml.subscribe(this.getViewRequests[id]);
       this.worker.ports.getView.send(new ViewParams(id, name, context));
     });
@@ -86,7 +97,7 @@ export default class ElmViewEngine {
   }
 
   private readViewsDir(): Promise<string[]> {
-    const options = this.options;
+    const options = this._options;
     return new Promise<string[]>((resolve, reject) => {
       fs.readdir(options.viewsDirPath, (errReadViews, files) => {
         if (errReadViews) {
@@ -127,10 +138,15 @@ export default class ElmViewEngine {
           return reject(err);
         }
 
+        if (this.isFaulty) {
+          return reject(new Error("Engine is in a faulty state. Aborting dir creation"));
+        }
+
         fs.mkdtemp(ElmViewEngine.GENERATION_DIR_BASE_PATH, (err2, dir) => {
           if (err2) {
             return reject(err);
           }
+
           return resolve(dir);
         });
       });
@@ -140,7 +156,7 @@ export default class ElmViewEngine {
   private copyDependenciesFromProject(generatedPath: string): Promise<void> {
     return new Promise(resolve => {
       ncp(
-        path.join(this.options.projectRoot, "elm-stuff"),
+        path.join(this._options.projectRoot, "elm-stuff"),
         path.join(generatedPath, "elm-stuff"),
         () => {
           // Not handling the error as it just means
@@ -262,7 +278,8 @@ export default class ElmViewEngine {
     port: any,
   ): number {
     const recycledId = this.requestsRecyclingPool.shift();
-    const reqId = recycledId !== undefined ? recycledId : this.getViewRequests.length;
+    const reqId =
+      recycledId !== undefined ? recycledId : this.getViewRequests.length;
 
     const cb = (view: ViewResult) => {
       if (view.id !== reqId) {

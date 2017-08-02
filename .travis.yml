@@ -7,7 +7,7 @@ env:
 install:
   - npm install
   - cd test/fixtures
-  - ./node_modules/elm/binwrappers/elm-make --yes
+  - ../../node_modules/elm/binwrappers/elm-make --yes
   - cd ../..
 script:
   - npm run-script snyk

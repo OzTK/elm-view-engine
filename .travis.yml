@@ -16,3 +16,6 @@ script:
   - npm run-script snyk
   - npm run build
   - npm test
+
+after_success:
+  - npm run coverage

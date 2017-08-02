@@ -70,6 +70,7 @@
   },
   "dependencies": {
     "coveralls": "^2.13.1",
+    "elm": "^0.18.0",
     "handlebars": "^4.0.10",
     "mkdirp": "^0.5.1",
     "ncp": "^2.0.0",

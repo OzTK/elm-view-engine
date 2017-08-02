@@ -4,10 +4,7 @@ node_js:
 env:
   global:
     - SNYK_TOKEN="698bcdaf-92de-4a07-bdb7-df4a3fc358b3"
-    - secure: >-
-        StsY+IUMDOEA46upNr2dTVWQmRqFhjLmThKeI9ZFRfZzuezcxYddIFcxx6znAbY7l3ynq3c36PCGsoTbCYnZxWWWnZshLY0azp16UDrDeUxnlM+MiQn8JuR950zAZpjwI9IGd5r3kH/ixtODBeb/Gyilw0oOlunFP9pyLi8SpEdQi06r4PYv8Zee0s7fwx5BA11Ri20BZyXGU0ZReYqQA6xNEMu1q+7mHR/adU6Z28LOfjSj3nKqtur8giXC3A6OjE7Xglb0ajFKpW7Hj4BYKEsCOCZ56HDifKSu9euvmKO/Yb3GtmaQInY6RWwsbJEFtXuXRB7m/epaDcNN0G7DxMgmHCaK6oPCT5KZCCaFKau/vivXYN3/AzXJNnQgfKSeVqs35yawEDnjYuLS7SnCDB2VCGhoHW2ProWZWJqY1NBIDZm4JowkMhBdEVf+04iDPFyBaEC8exURvtAuq8Yuxwszi73TjcbH/boCrpcM7pWKR3KknztG6OYYASm6TC2mJedb3xuqwTAZvm+rLUdj/X564Pja57yrncHWnmBVQQ3AERb8MCq1944Crb3h68f1Tcb9fCUGLQnEX992hFc77mUtVwlQ48QWxtcS7A9qU4RYC6/r7Mlw+XnENOtICTFpQDeXD/0VOQEXWg157mulqcoh8CWZfJ/vwh3ujY76Nl0=
 install:
-  - npm i -g elm
   - npm install
   - cd test/fixtures
   - elm-make --yes

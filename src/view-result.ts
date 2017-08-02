@@ -1,5 +1,5 @@
 export default class ViewResult {
-  public html: string;
-  public error: string;
-  public id: number;
+  public html?: string = undefined;
+  public error?: string = undefined;
+  public id: number = 0;
 }

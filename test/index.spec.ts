@@ -1,6 +1,5 @@
 import "mocha";
-// import * as should from "should";
-import "should";
+import * as should from "should";
 
 import * as express from "express";
 import * as path from "path";
@@ -34,7 +33,10 @@ describe("module entry point", () => {
     });
 
     it("returns a view engine", () => {
-      return configure(engineStub).should.eventually.have.properties("compile", "getView");
+      return configure(engineStub).should.eventually.have.properties(
+        "compile",
+        "getView",
+      );
     });
 
     it("doesn't fail if a wrong express app is passed", () => {
@@ -48,7 +50,10 @@ describe("module entry point", () => {
       );
 
       // Test/Assert
-      return configure(customEngine).should.eventually.have.properties("compile", "getView");
+      return configure(customEngine).should.eventually.have.properties(
+        "compile",
+        "getView",
+      );
     });
 
     it("configures express app if passed", async () => {
@@ -76,11 +81,11 @@ describe("module entry point", () => {
   });
 
   describe("#__express", () => {
-    before(() => {
+    beforeEach(() => {
       reset();
     });
 
-    it("fails if the engine instance was not configured prior to the call", () => {
+    it("throws if the engine instance was not configured prior to the call", () => {
       return __express(
         path.join(mockProject.viewsPath, "UsersView"),
         {},
@@ -88,6 +93,34 @@ describe("module entry point", () => {
       ).should.be.rejectedWith(
         "configure() must be called before trying to call __express()",
       );
+    });
+
+    it("throws if the engine instance failed to configure prior to the call", async () => {
+      // Prepare
+      mockProject.deleteExternalViewSync();
+      try {
+        await configure(
+          new Options(mockProject.viewsPath, mockProject.projectPath),
+        );
+        should.fail(true, false, "configure() should have failed", "=");
+      } catch (err) {
+        err.message.should.be.equal("One or more views don't compile. You should check your elm code!");
+
+        // Test/Assert
+        try {
+          await __express(
+            path.join(mockProject.viewsPath, "OtherView"),
+            {},
+            () => true,
+          );
+        } catch (err) {
+          err.message.should.be.equal(
+            "Views need to be compiled before rendering them",
+          );
+        }
+      } finally {
+        await mockProject.restoreFiles();
+      }
     });
 
     it("returns the engine result", async () => {

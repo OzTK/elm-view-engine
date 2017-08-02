@@ -45,3 +45,7 @@ lib
 
 # elm-server-side-renderer
 !src/elm-server-side-renderer/src/Native/ServerSideHelper.js
+
+# nyc coverage
+.nyc_output
+coverage

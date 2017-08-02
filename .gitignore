@@ -49,3 +49,4 @@ lib
 # nyc coverage
 .nyc_output
 coverage
+.coveralls.yml

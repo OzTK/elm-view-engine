@@ -10,7 +10,7 @@
     "postbuild": "copyfiles package.json README.md LICENSE lib/",
     "snyk": "snyk test",
     "test": "nyc mocha --compilers ts:ts-node/register --require source-map-support/register --bail test/*.ts",
-    "coverage": "nyc report --reportertext-lcov | coveralls"
+    "coverage": "nyc report --reporter=text-lcov | coveralls"
   },
   "repository": {
     "type": "git",

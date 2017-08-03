@@ -66,6 +66,10 @@ update msg model =
             model ! []
 
 
+
+-- View
+
+
 getViewHtml : Model -> Context -> String -> (Maybe Int -> GetHtmlResult)
 getViewHtml views context name =
     let

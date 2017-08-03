@@ -7,7 +7,7 @@
     "clean": "rimraf lib test/*.{js,js.map} src/*.{js,js.map} .nyc_output coverage",
     "prebuild": "npm run clean",
     "build": "tsc -p .",
-    "postbuild": "copyfiles package.json README.md LICENSE lib/",
+    "postbuild": "copyfiles -f package.json src/Main.elm.hbs src/elm-package.json README.md LICENSE lib/ && copyfiles -u 1 'src/elm-server-side-renderer/**/*' lib/",
     "snyk": "snyk test",
     "test": "nyc mocha --compilers ts:ts-node/register --require source-map-support/register --bail test/*.ts",
     "coverage:local": "nyc report --reporter=html",

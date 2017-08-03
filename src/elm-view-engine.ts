@@ -273,7 +273,7 @@ export default class ElmViewEngine {
   // View rendering
 
   private createRequestHandler(
-    resolve: (res: string) => void,
+    resolve: (res?: string) => void,
     reject: (reason?: any) => void,
     port: any,
   ): number {

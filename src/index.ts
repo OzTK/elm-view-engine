@@ -49,6 +49,7 @@ export async function __express(
 
   try {
     const html = await engine.getView(viewName, options);
+    callback(null, html);
     return html;
   } catch(err) {
     callback(err);

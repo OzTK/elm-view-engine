@@ -10,6 +10,6 @@ describe("ViewResult", () => {
     Object.getOwnPropertyNames(vr)
       .should.containEql("html")
       .and.containEql("error")
-      .and.containEql("id");
+      .and.containEql("id").and.be.of.length(3);
   });
 });

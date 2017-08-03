@@ -1,5 +1,5 @@
 import "mocha";
-import * as should from "should";
+import "should";
 
 import * as express from "express";
 import * as path from "path";
@@ -7,6 +7,8 @@ import { stub } from "sinon";
 
 import { __express, configure, ElmViewEngine, Options, reset } from "../src";
 import MockProjectHelper from "./mock-project-helper";
+
+const COMPILE_TIMEOUT = 1800000;
 
 describe("module entry point", () => {
   let mockProject: MockProjectHelper;
@@ -95,32 +97,32 @@ describe("module entry point", () => {
       );
     });
 
-    it("throws if the engine instance failed to configure prior to the call", async () => {
-      // Prepare
-      mockProject.deleteExternalViewSync();
-      try {
-        await configure(
-          new Options(mockProject.viewsPath, mockProject.projectPath),
-        );
-        should.fail(true, false, "configure() should have failed", "=");
-      } catch (err) {
-        err.message.should.be.equal("One or more views don't compile. You should check your elm code!");
+    context("when a required elm module was deleted", () => {
+      before(async function(this: Mocha.IHookCallbackContext) {
+        this.timeout(COMPILE_TIMEOUT);
+        mockProject.deleteExternalViewSync();
 
-        // Test/Assert
         try {
-          await __express(
-            path.join(mockProject.viewsPath, "OtherView"),
-            {},
-            () => true,
+          await configure(
+            new Options(mockProject.viewsPath, mockProject.projectPath),
           );
+          throw new Error("configure should fail");
         } catch (err) {
-          err.message.should.be.equal(
-            "Views need to be compiled before rendering them",
-          );
+          if (err.message === "configure should fail") {
+            throw err;
+          }
         }
-      } finally {
-        await mockProject.restoreFiles();
-      }
+      });
+
+      it("throws if the engine instance failed to configure prior to the call", async () => {
+        await __express(
+          path.join(mockProject.viewsPath, "OtherView"),
+          {},
+          () => true,
+        ).should.be.rejectedWith(
+          "Views need to be compiled before rendering them",
+        );
+      });
     });
 
     it("returns the engine result", async () => {

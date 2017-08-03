@@ -1,6 +1,6 @@
 {
   "name": "elm-view-engine",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Renders elm views from a directory of elm modules. This can and is meant to be plugged into Express as a template engine.",
   "main": "index.js",
   "readme": "README.md",

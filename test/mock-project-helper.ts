@@ -27,13 +27,15 @@ export default class MockProjectHelper {
     ]).then(() => projHelper);
   };
 
-  private static readonly EXTERNAL_VIEWS_DIRNAME = "external_views";
+  private readonly externalViewDirPath: string;
 
   private constructor(
-    private _projectPath: string,
-    private _viewsPath: string,
-    private fixturesPath: string,
-  ) {}
+    private readonly _projectPath: string,
+    private readonly _viewsPath: string,
+    private readonly fixturesPath: string,
+  ) {
+    this.externalViewDirPath = path.join(_projectPath, "..", "external_views");
+  }
 
   public get projectPath(): string {
     return this._projectPath;
@@ -44,11 +46,6 @@ export default class MockProjectHelper {
   }
 
   public restoreFiles = () => {
-    // return new Promise(async resolve => {
-    //   await this.importPackageConfig();
-    //   await this.importViews()
-    //   resolve();
-    // });
     return Promise.all([
       this.importPackageConfig(),
       this.importViews(),
@@ -69,8 +66,7 @@ export default class MockProjectHelper {
   public deleteExternalViewSync = () => {
     fs.unlinkSync(
       path.join(
-        this.projectPath,
-        MockProjectHelper.EXTERNAL_VIEWS_DIRNAME,
+        this.externalViewDirPath,
         "InvalidView.elm",
       ),
     );
@@ -78,8 +74,13 @@ export default class MockProjectHelper {
 
   public deleteProject = () => {
     return new Promise((resolve, reject) => {
-      rimraf.sync(this._projectPath);
-      rimraf(this._projectPath, this.handleCopyError(resolve, reject));
+      rimraf(this._projectPath, (error) => {
+        if (error) {
+          return reject(error);
+        }
+        
+        rimraf(this.externalViewDirPath, this.handleCopyError(resolve, reject));
+      });
     });
   };
 
@@ -103,7 +104,9 @@ export default class MockProjectHelper {
         copy(
           files
             .filter(
-              f => f.endsWith("View.elm") && !f.endsWith("InvalidView.elm"),
+              f =>
+                f.endsWith("View.elm") &&
+                !f.endsWith("InvalidView.elm"),
             )
             .map(f => path.join(this.fixturesPath, f))
             .concat([this._viewsPath]),
@@ -122,19 +125,15 @@ export default class MockProjectHelper {
 
   private importExternalView(): Promise<any> {
     return new Promise((resolve, reject) => {
-      const otherViewsPath = path.join(
-        this._projectPath,
-        MockProjectHelper.EXTERNAL_VIEWS_DIRNAME,
-      );
       try {
-        fs.mkdirSync(otherViewsPath);
+        fs.mkdirSync(this.externalViewDirPath);
       } catch (err) {
         if (err.code !== "EEXIST") {
           return reject();
         }
       } finally {
         copy(
-          [path.join(this.fixturesPath, "InvalidView.elm"), otherViewsPath],
+          [path.join(this.fixturesPath, "InvalidView.elm"), this.externalViewDirPath],
           true,
           this.handleCopyError(resolve, reject),
         );
@@ -159,7 +158,7 @@ export default class MockProjectHelper {
         path.join(this._projectPath, "elm-stuff"),
         () => {
           resolve();
-        } /* No reject if no dependencies: they'll get dl) */,
+        } /* No reject if no dependencies: they'll get dl */,
       );
     });
   }

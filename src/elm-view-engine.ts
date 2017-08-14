@@ -59,7 +59,7 @@ export default class ElmViewEngine {
 
   public getView(name: string, context?: any): Promise<string> {
     return new Promise((resolve, reject) => {
-      if (!this.worker || this.isFaulty) {
+      if (!this.worker || this.isFaulty) {
         return reject(
           new Error("Views need to be compiled before rendering them"),
         );
@@ -139,7 +139,9 @@ export default class ElmViewEngine {
         }
 
         if (this.isFaulty) {
-          return reject(new Error("Engine is in a faulty state. Aborting dir creation"));
+          return reject(
+            new Error("Engine is in a faulty state. Aborting dir creation"),
+          );
         }
 
         fs.mkdtemp(ElmViewEngine.GENERATION_DIR_BASE_PATH, (err2, dir) => {
@@ -196,9 +198,17 @@ export default class ElmViewEngine {
     };
 
     myConfig["source-directories"].push(
-      ...projConfig["source-directories"].map((dep: string) =>
-        path.relative(projectPath, dep.replace(".", options.projectRoot)),
-      ),
+      ...projConfig["source-directories"].map((dep: string) => {
+        let sourcePath = dep.replace(
+          "..",
+          path.join(options.projectRoot, ".."),
+        );
+        if (sourcePath.startsWith("./")) {
+          sourcePath = sourcePath.replace(".", options.projectRoot);
+        }
+
+        return path.relative(projectPath, sourcePath);
+      }),
     );
 
     await this.outputElmPackageConfig(projectPath, myConfig);
@@ -206,7 +216,7 @@ export default class ElmViewEngine {
     try {
       // ** Keeping this for debugging as compiler.compileWorker
       // ** doesn't return elm compiler's message
-      // const code = await compiler
+      // await compiler
       //   .compileToString(modulePath, {
       //     cwd: projectPath,
       //     verbose: true,
@@ -217,6 +227,7 @@ export default class ElmViewEngine {
         modulePath,
         path.parse(modulePath).name,
       );
+
       return module;
     } catch (err) {
       // Throwing a human readable message as the compiler

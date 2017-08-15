@@ -30,6 +30,8 @@ describe("module entry point", () => {
   });
 
   describe("#configure", () => {
+    afterEach(() => mockProject.restoreFiles());
+
     it("throws to configure if options are not valid", () => {
       return configure().should.be.rejected();
     });
@@ -80,6 +82,20 @@ describe("module entry point", () => {
       app.get("view engine").should.be.equal("elm");
       isEngineSet.should.be.true();
     });
+
+    it("compiles sources when forceCompilation is true (even if module is here)", async () => {
+      // Prepare
+      mockProject.importCompiledViews();
+
+      // Test
+      const start = process.hrtime();
+      const eng = await configure(new Options(mockProject.viewsPath, mockProject.projectPath, undefined, true));
+      const time = process.hrtime(start);
+
+      // Assert
+      eng.should.be.an.Object();
+      time[0].should.be.greaterThanOrEqual(1);
+    }).timeout(COMPILE_TIMEOUT);
   });
 
   describe("#__express", () => {

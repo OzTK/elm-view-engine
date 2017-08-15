@@ -50,6 +50,7 @@ export default class MockProjectHelper {
       this.importPackageConfig(),
       this.importViews(),
       this.importExternalView(),
+      this.deleteCompiledViews(),
     ]);
   };
 
@@ -64,25 +65,47 @@ export default class MockProjectHelper {
   };
 
   public deleteExternalViewSync = () => {
-    fs.unlinkSync(
-      path.join(
-        this.externalViewDirPath,
-        "InvalidView.elm",
-      ),
-    );
+    fs.unlinkSync(path.join(this.externalViewDirPath, "InvalidView.elm"));
   };
 
   public deleteProject = () => {
     return new Promise((resolve, reject) => {
-      rimraf(this._projectPath, (error) => {
+      rimraf(this._projectPath, error => {
         if (error) {
           return reject(error);
         }
-        
+
         rimraf(this.externalViewDirPath, this.handleCopyError(resolve, reject));
       });
     });
   };
+
+  public importCompiledViews(invalid: boolean = false): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const filename = invalid
+        ? "views.compiled.invalid.js"
+        : "views.compiled.js";
+      const finalModulePath = path.join(this._viewsPath, "views.compiled.js");
+      const moduleSourcePath = path.join(this.fixturesPath, filename);
+      const moduleProjPath = path.join(this._viewsPath, filename);
+
+      copy([moduleSourcePath, this._viewsPath], true, err => {
+        if (err) {
+          return reject(err);
+        }
+
+        if (invalid) {
+          fs.rename(
+            moduleProjPath,
+            finalModulePath,
+            this.handleCopyError(resolve, reject),
+          );
+        } else {
+          return resolve()
+        }
+      });
+    });
+  }
 
   private handleCopyError(
     resolve: (value?: any | PromiseLike<any>) => void,
@@ -104,9 +127,7 @@ export default class MockProjectHelper {
         copy(
           files
             .filter(
-              f =>
-                f.endsWith("View.elm") &&
-                !f.endsWith("InvalidView.elm"),
+              f => f.endsWith("View.elm") && !f.endsWith("InvalidView.elm"),
             )
             .map(f => path.join(this.fixturesPath, f))
             .concat([this._viewsPath]),
@@ -133,7 +154,10 @@ export default class MockProjectHelper {
         }
       } finally {
         copy(
-          [path.join(this.fixturesPath, "InvalidView.elm"), this.externalViewDirPath],
+          [
+            path.join(this.fixturesPath, "InvalidView.elm"),
+            this.externalViewDirPath,
+          ],
           true,
           this.handleCopyError(resolve, reject),
         );
@@ -160,6 +184,17 @@ export default class MockProjectHelper {
           resolve();
         } /* No reject if no dependencies: they'll get dl */,
       );
+    });
+  }
+
+  private deleteCompiledViews(): Promise<any> {
+    return new Promise((resolve, reject) => {
+      fs.unlink(path.join(this._viewsPath, "views.compiled.js"), err => {
+        if (err && err.code !== "ENOENT") {
+          return reject(err);
+        }
+        return resolve();
+      });
     });
   }
 }

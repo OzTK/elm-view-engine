@@ -18,12 +18,19 @@ var port = normalizePort(process.env.PORT || "3000");
 app.set("port", port);
 
 // view engine setup
+console.info("Starting compilation...");
+var start = process.hrtime();
 eve
   .configure(
     new eve.Options(path.join(__dirname, "..", "views"), path.join(__dirname, ".."), app),
   )
-  .then(() => startServer(app))
+  .then(() => {
+    var end = process.hrtime(start);
+    console.info("Compiled in %ds and %dms", end[0], end[1]/1000000);
+    startServer(app);
+  })
   .catch(err => {
+    console.error("Error during compilation: %s", err.toString());
     throw err;
   });
 
@@ -49,7 +56,7 @@ function startServer(app) {
   function onListening() {
     var addr = server.address();
     var bind = typeof addr === "string" ? "pipe " + addr : "port " + addr.port;
-    debug("Listening on " + bind);
+    console.info("Listening on " + bind);
   }
 }
 

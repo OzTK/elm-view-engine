@@ -50,3 +50,6 @@ lib
 .nyc_output
 coverage
 .coveralls.yml
+
+# tests
+!test/fixtures/*.js

@@ -8,6 +8,7 @@ import MockProjectHelper from "./mock-project-helper";
 
 import ElmViewEngine from "../src/elm-view-engine";
 import Options from "../src/elm-view-options";
+import ImportCompiledViewsError from "../src/import-compiled-views-error";
 
 const HBS_TEMPLATE_PATH = path.join(__dirname, "..", "src", "Main.elm.hbs");
 const HBS_NONEXISTENT_TEMPLATE_PATH = path.join(
@@ -19,13 +20,13 @@ const COMPILE_TIMEOUT = 1800000;
 
 describe("ElmViewEngine", () => {
   let engine: ElmViewEngine;
+  let engineOptions: Options;
   let mockHelper: MockProjectHelper;
 
   before(async () => {
     mockHelper = await MockProjectHelper.createProject(FIXTURES_PATH);
-    engine = new ElmViewEngine(
-      new Options(mockHelper.viewsPath, mockHelper.projectPath),
-    );
+    engineOptions = new Options(mockHelper.viewsPath, mockHelper.projectPath);
+    engine = new ElmViewEngine(engineOptions);
   });
 
   after(() => {
@@ -34,7 +35,6 @@ describe("ElmViewEngine", () => {
 
   describe("#compile()", () => {
     afterEach(function(this: Mocha.IHookCallbackContext) {
-      // this.timeout(30000);
       return mockHelper.restoreFiles();
     });
 
@@ -94,16 +94,42 @@ describe("ElmViewEngine", () => {
         );
     }).timeout(COMPILE_TIMEOUT); // If dependencies have to be downloaded it might take some time
 
-    it("compiles to valid elm code and start a worker", async () => {
+    it("compiles to valid elm code and outputs the module's js file", async () => {
       // Test
-      const worker = await engine.compile();
+      const modulePath = await engine.compile();
 
       // Assert
-      worker.should.be.an.Object().and.have.property("ports");
-      worker.ports.should.be.an
-        .Object()
-        .and.have.properties("getView", "receiveHtml");
+      modulePath.should.be.a
+        .String()
+        .and.be.equal(
+          path.join(engineOptions.viewsDirPath, "views.compiled.js"),
+        );
+
+      const moduleExists = fs.existsSync(modulePath);
+      moduleExists.should.be.true();
     }).timeout(COMPILE_TIMEOUT);
+  });
+
+  describe("#needsCompilation()", () => {
+    before(() => {
+      engine = new ElmViewEngine(engineOptions);
+    });
+
+    afterEach(() => {
+      return mockHelper.restoreFiles();
+    });
+
+    it("returns true if the engine was not compiled before", () => {
+      return engine.needsCompilation().should.eventually.be.true();
+    });
+
+    it("returns false if compiled views exist", async () => {
+      // Prepare
+      await mockHelper.importCompiledViews();
+
+      // Test/Assert
+      return engine.needsCompilation().should.eventually.be.false();
+    });
   });
 
   describe("#getView()", () => {
@@ -124,14 +150,15 @@ describe("ElmViewEngine", () => {
     });
 
     it("throws if no view name was provided", () => {
-      // Test/Assert
-      return engine
-        .getView("")
-        .should.be.rejectedWith("If you pass no name, you get no view!");
+      // Prepare
+      const errMsg = "If you pass no name, you get no view!";
 
-      // Question of the day: How do I test something doable in js but not in ts ??
-      // engine.getView(null).should.be.rejectedWith(errMsg);
-      // engine.getView(undefined).should.be.rejectedWith(errMsg);
+      // Test/Assert
+      return Promise.all([
+        engine.getView("").should.be.rejectedWith(errMsg),
+        engine.getView(null).should.be.rejectedWith(errMsg),
+        engine.getView().should.be.rejectedWith(errMsg),
+      ]);
     });
 
     it("throws if the view doesn't exist", () => {
@@ -214,6 +241,39 @@ describe("ElmViewEngine", () => {
             .which.containEql(c.simpleName),
         ),
       );
+    });
+
+    describe("if compiled views js module exists", () => {
+      before(() => {
+        engine = new ElmViewEngine(engineOptions);
+      });
+
+      afterEach(() => mockHelper.restoreFiles());
+
+      it("fails if the compiled views are not a valid expected module", async () => {
+        // Prepare
+        await mockHelper.importCompiledViews(true);
+
+        // Test/Assert
+        return engine.getView("UsersView").should.be.rejectedWith(ImportCompiledViewsError);
+      });
+
+      it("returns views properly without needing to compile beforehand", async () => {
+        // Prepare
+        await mockHelper.importCompiledViews();
+        const usersExpectedView = fs.readFileSync(
+          path.join(FIXTURES_PATH, "UsersView.html"),
+          "UTF-8",
+        );
+  
+        // Test
+        const usersActualView = await engine.getView("UsersView");
+  
+        // Assert
+        removeFormat(usersActualView).should.be.equal(
+          removeFormat(usersExpectedView),
+        );
+      });
     });
 
     const removeFormat = (html: string) =>

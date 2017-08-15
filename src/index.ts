@@ -6,31 +6,45 @@ import Options from "./elm-view-options";
 let engine: ElmViewEngine | null;
 let isCompiling = false;
 
-export function configure(options?: Options | ElmViewEngine): Promise<ElmViewEngine> {
+export function configure(
+  options?: Options | ElmViewEngine,
+): Promise<ElmViewEngine> {
   engine =
     options instanceof ElmViewEngine ? options : new ElmViewEngine(options);
 
   isCompiling = true;
-  return engine.compile().then(() => {
-    isCompiling = false;
+  return engine.needsCompilation().then(needsCompilation => {
     if (!engine) {
-      throw new Error("View engine should not be null after compilation");
+      throw new Error(
+        "View engine should not be null after requesting compilation status",
+      );
     }
 
-    if (
-      engine &&
-      engine.options.expressApp &&
-      typeof engine.options.expressApp.set === "function" &&
-      typeof engine.options.expressApp.engine === "function"
-    ) {
-      const app = engine.options.expressApp;
-      app
-        .set("views", engine.options.viewsDirPath)
-        .set("view engine", "elm")
-        .engine("elm", __express);
+    if (!needsCompilation && !engine.options.forceCompilation) {
+      return engine;
     }
-      
-    return engine;
+
+    return engine.compile().then(() => {
+      isCompiling = false;
+      if (!engine) {
+        throw new Error("View engine should not be null after compilation");
+      }
+
+      if (
+        engine &&
+        engine.options.expressApp &&
+        typeof engine.options.expressApp.set === "function" &&
+        typeof engine.options.expressApp.engine === "function"
+      ) {
+        const app = engine.options.expressApp;
+        app
+          .set("views", engine.options.viewsDirPath)
+          .set("view engine", "elm")
+          .engine("elm", __express);
+      }
+
+      return engine;
+    });
   });
 }
 
@@ -51,7 +65,7 @@ export async function __express(
     const html = await engine.getView(viewName, options);
     callback(null, html);
     return html;
-  } catch(err) {
+  } catch (err) {
     callback(err);
     throw err;
   }

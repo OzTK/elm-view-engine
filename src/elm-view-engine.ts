@@ -8,6 +8,7 @@ import * as hbs from "handlebars";
 import * as compiler from "node-elm-compiler";
 
 import Options from "./elm-view-options";
+import ImportCompiledViewsError from "./import-compiled-views-error";
 import ViewParams from "./view-params";
 import ViewResult from "./view-result";
 
@@ -18,6 +19,7 @@ export default class ElmViewEngine {
   );
 
   private static readonly TEMPLATE_PATH = path.join(__dirname, "Main.elm.hbs");
+  private static readonly OUTPUT_JS_FILENAME = "views.compiled.js";
 
   private worker: ElmComponent<any>;
   private getViewRequests: Array<((view: ViewResult) => void) | undefined> = [];
@@ -30,7 +32,11 @@ export default class ElmViewEngine {
 
   constructor(private _options: Options = new Options()) {}
 
-  public compile(): Promise<ElmComponent<any>> {
+  /**
+   * Compiles the views in the views folder and generates a javascript module
+   * Outputted in the Options.compilePath folder (defaults to views folder).
+   */
+  public compile(): Promise<string> {
     this.isFaulty = false;
     return Promise.all<string[], string, string>([
       this.readViewsDir(),
@@ -44,11 +50,15 @@ export default class ElmViewEngine {
 
         // Waiting for dependencies to be copied before compiling
         await depsCopy;
-        this.worker = await this.compileElmModule(this._options, modulePath);
+        const jsModulePath = await this.compileElmModule(
+          this._options,
+          modulePath,
+        );
 
+        // Awaiting to avoid interruption by the end of the process
         await this.cleanGenerated();
 
-        return this.worker;
+        return jsModulePath;
       })
       .catch(async err => {
         this.isFaulty = true;
@@ -57,16 +67,56 @@ export default class ElmViewEngine {
       });
   }
 
-  public getView(name: string, context?: any): Promise<string> {
-    return new Promise((resolve, reject) => {
-      if (!this.worker || this.isFaulty) {
-        return reject(
-          new Error("Views need to be compiled before rendering them"),
-        );
+  /**
+   * Returns true if compilation is needed before calling #getView().
+   */
+  public needsCompilation(): Promise<boolean> {
+    return new Promise(resolve => {
+      fs.stat(
+        path.join(this._options.compilePath, ElmViewEngine.OUTPUT_JS_FILENAME),
+        err => {
+          if (err) {
+            return resolve(true);
+          }
+
+          return resolve(false);
+        },
+      );
+    });
+  }
+
+  /**
+   * Produce the view requested if it is in the views folder.
+   * @param name name of the requested view. MUST be defined!
+   * @param context context object of the view. Must have properties matching the elm deserializer in the elm view.
+   */
+  public getView(name?: string | null, context?: any): Promise<string> {
+    return new Promise<string>(async (resolve, reject) => {
+      const compileError = new Error(
+        "Views need to be compiled before rendering them",
+      );
+
+      const needsCompilation = await this.needsCompilation();
+      if (this.isFaulty || needsCompilation) {
+        return reject(compileError);
       }
 
       if (!name || name === "") {
         return reject(new Error("If you pass no name, you get no view!"));
+      }
+
+      // Lazy-instantianting the worker
+      if (!this.worker) {
+        const jsModulePath = path.join(
+          this._options.compilePath,
+          ElmViewEngine.OUTPUT_JS_FILENAME,
+        );
+        try {
+          delete require.cache[require.resolve(jsModulePath)];
+          this.worker = require(jsModulePath).Main.worker();
+        } catch (error) {
+          return reject(new ImportCompiledViewsError(error));
+        }
       }
 
       const id = this.createRequestHandler(
@@ -187,7 +237,7 @@ export default class ElmViewEngine {
   private async compileElmModule(
     options: Options,
     modulePath: string,
-  ): Promise<ElmComponent<any>> {
+  ): Promise<string> {
     const projectPath = path.dirname(modulePath);
     const projConfig = await this.loadElmPackageConfig(options.projectRoot);
     const myConfig = await this.loadElmPackageConfig(__dirname);
@@ -216,19 +266,13 @@ export default class ElmViewEngine {
     try {
       // ** Keeping this for debugging as compiler.compileWorker
       // ** doesn't return elm compiler's message
-      // await compiler
-      //   .compileToString(modulePath, {
-      //     cwd: projectPath,
-      //     verbose: true,
-      //     yes: true,
-      //   });
-      const module = await compiler.compileWorker(
-        path.dirname(modulePath),
-        modulePath,
-        path.parse(modulePath).name,
-      );
+      const jsCode = await compiler.compileToString(modulePath, {
+        cwd: projectPath,
+        verbose: process.env.NODE_ENV === "development",
+        yes: true,
+      });
 
-      return module;
+      return this.outputElmJsModule(jsCode);
     } catch (err) {
       // Throwing a human readable message as the compiler
       // will only return a vague process error message
@@ -236,6 +280,22 @@ export default class ElmViewEngine {
         "One or more views don't compile. You should check your elm code!",
       );
     }
+  }
+
+  private outputElmJsModule(elmCode: string): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
+      const outPath = path.join(
+        this._options.compilePath,
+        ElmViewEngine.OUTPUT_JS_FILENAME,
+      );
+      fs.writeFile(outPath, elmCode, error => {
+        if (error) {
+          return reject(error);
+        }
+
+        return resolve(outPath);
+      });
+    });
   }
 
   private outputElmPackageConfig(

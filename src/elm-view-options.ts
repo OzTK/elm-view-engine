@@ -1,3 +1,5 @@
+import * as path from "path";
+
 export default class Options {
   /**
    * ElmViewEngine options to be passed when constructing
@@ -8,7 +10,7 @@ export default class Options {
    * @param forceCompilation If true, forces views to be recompiled even if there is already an outputted js module
    */
   constructor(
-    public viewsDirPath: string = "views",
+    public viewsDirPath: string = path.join(process.cwd(), "views"),
     public projectRoot: string = process.cwd(),
     public expressApp?: any,
     public forceCompilation: boolean = false,

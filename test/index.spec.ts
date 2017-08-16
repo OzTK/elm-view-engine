@@ -85,7 +85,7 @@ describe("module entry point", () => {
 
     it("compiles sources when forceCompilation is true (even if module is here)", async () => {
       // Prepare
-      mockProject.importCompiledViews();
+      await mockProject.importCompiledViews();
 
       // Test
       const start = process.hrtime();
@@ -96,6 +96,21 @@ describe("module entry point", () => {
       eng.should.be.an.Object();
       time[0].should.be.greaterThanOrEqual(1);
     }).timeout(COMPILE_TIMEOUT);
+    
+    it("does not does compiles sources when forceCompilation is not set/false if there is already a js module", async () => {
+      // Prepare
+      await mockProject.importCompiledViews();
+
+      // Test
+      const start = process.hrtime();
+      const eng = await configure(new Options(mockProject.viewsPath, mockProject.projectPath));
+      const time = process.hrtime(start);
+
+      // Assert
+      eng.should.be.an.Object();
+      time[0].should.be.equal(0);
+      time[1].should.be.lessThanOrEqual(500*10000);
+    });
   });
 
   describe("#__express", () => {
@@ -181,11 +196,11 @@ describe("module entry point", () => {
   });
 });
 
-function stubEngine(engine: ElmViewEngine) {
-  stub(engine, "compile").returns(new Promise(resolve => resolve()));
-  stub(engine, "getView").callsFake((viewName: string, context?: any) => {
+function stubEngine(engineToStub: ElmViewEngine) {
+  stub(engineToStub, "compile").returns(new Promise(resolve => resolve()));
+  stub(engineToStub, "getView").callsFake((viewName: string, context?: any) => {
     viewName.toString();
     return new Promise(resolve => resolve(context));
   });
-  return engine;
+  return engineToStub;
 }

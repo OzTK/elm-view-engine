@@ -44,7 +44,8 @@
     ],
     "exclude": [
       "**/*.d.ts",
-      "src/elm-server-side-renderer"
+      "src/elm-server-side-renderer",
+      "src/cli.ts"
     ],
     "all": true
   },

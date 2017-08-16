@@ -15,12 +15,14 @@ export function configure(
   isCompiling = true;
   return engine.needsCompilation().then(needsCompilation => {
     if (!engine) {
+      isCompiling = false;
       throw new Error(
         "View engine should not be null after requesting compilation status",
       );
     }
 
     if (!needsCompilation && !engine.options.forceCompilation) {
+      isCompiling = false;
       return engine;
     }
 

@@ -6,7 +6,7 @@ import * as fs from "fs";
 import * as path from "path";
 import MockProjectHelper from "./mock-project-helper";
 
-import { compile, createOptions } from "../src/cli";
+import { compile, createOptions } from "../src/cli-utils";
 import Options from "../src/elm-view-options";
 
 const COMPILE_TIMEOUT = 1800000;
@@ -37,20 +37,17 @@ describe("elm-view-engine (CLI)", () => {
       return helper.deleteProject();
     });
 
-    it("compiles to a valid js module", async () => {
+    it("fails to compile if invalid option", () => {
       // Prepare
-      program.views = helper.viewsPath;
+      program.views = "wrong_path";
       program.project = helper.projectPath;
 
-      // Test
+      // Test/Assert
       const options = createOptions(program);
-      await compile(options);
-
-      // Assert
-      should.exist(fs.statSync(path.join(helper.viewsPath, "views.compiled.js")));
+      return compile(options).should.be.rejected();
     }).timeout(COMPILE_TIMEOUT);
     
-    it("compiles to the passed location", async () => {
+    it("compiles and output js file to the passed location", async () => {
       // Prepare
       program.views = helper.viewsPath;
       program.project = helper.projectPath;

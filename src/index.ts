@@ -3,51 +3,64 @@ import * as path from "path";
 import ElmViewEngine from "./elm-view-engine";
 import Options from "./elm-view-options";
 
-let engine: ElmViewEngine | null;
+let currentOptions: Options | undefined | null;
+let engine: ElmViewEngine;
 let isCompiling = false;
 
-export function configure(
+export async function configure(
   options?: Options | ElmViewEngine,
 ): Promise<ElmViewEngine> {
-  engine =
-    options instanceof ElmViewEngine ? options : new ElmViewEngine(options);
+  if (isCompiling) {
+    return Promise.reject(
+      new Error("There is already a compilation in progress"),
+    );
+  }
 
   isCompiling = true;
-  return engine.needsCompilation().then(needsCompilation => {
-    if (!engine) {
-      isCompiling = false;
-      throw new Error(
-        "View engine should not be null after requesting compilation status",
-      );
+
+  const configureExpressApp = () => {
+    if (
+      engine.options.expressApp &&
+      typeof engine.options.expressApp.set === "function" &&
+      typeof engine.options.expressApp.engine === "function"
+    ) {
+      const app = engine.options.expressApp;
+      app
+        .set("views", engine.options.viewsDirPath)
+        .set("view engine", "elm")
+        .engine("elm", __express);
     }
+  };
 
-    if (!needsCompilation && !engine.options.forceCompilation) {
-      isCompiling = false;
-      return engine;
-    }
+  if (options instanceof ElmViewEngine) {
+    engine = options;
+    currentOptions = engine.options;
+  } else if (options instanceof Options) {
+    currentOptions = options;
+    engine = new ElmViewEngine(currentOptions);
+  } else {
+    engine = new ElmViewEngine();
+    currentOptions = engine.options;
+  }
 
-    return engine.compile().then(() => {
-      isCompiling = false;
-      if (!engine) {
-        throw new Error("View engine should not be null after compilation");
-      }
+  const needsCompilation = await engine.needsCompilation();
+  if (!needsCompilation && !engine.options.forceCompilation) {
+    isCompiling = false;
+    configureExpressApp()
+    return engine;
+  }
 
-      if (
-        engine &&
-        engine.options.expressApp &&
-        typeof engine.options.expressApp.set === "function" &&
-        typeof engine.options.expressApp.engine === "function"
-      ) {
-        const app = engine.options.expressApp;
-        app
-          .set("views", engine.options.viewsDirPath)
-          .set("view engine", "elm")
-          .engine("elm", __express);
-      }
+  configureExpressApp();
 
-      return engine;
-    });
-  });
+  try {
+    await engine.compile();
+  } catch (error) {
+    throw error;
+  } finally {
+    isCompiling = false;
+  }
+
+  return engine;
 }
 
 export async function __express(
@@ -55,7 +68,7 @@ export async function __express(
   options: any,
   callback: (err?: Error | string | null, content?: string) => void,
 ): Promise<string> {
-  if (!engine) {
+  if (!currentOptions || !engine || await engine.needsCompilation()) {
     throw new Error(
       "configure() must be called before trying to call __express()",
     );
@@ -74,11 +87,11 @@ export async function __express(
 }
 
 export function reset(): boolean {
-  if (isCompiling) {
+  if (isCompiling || !currentOptions) {
     return false;
   }
 
-  engine = null;
+  engine = new ElmViewEngine(currentOptions);
   return true;
 }
 

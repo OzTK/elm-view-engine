@@ -34,7 +34,7 @@ render : UsersContext -> Html msg
 render ctx =
     div
         []
-        [ h1 [] [ text "Users" ]
+        [ h1 [] [ text "Userzzz" ]
         , ul [] <| List.map user ctx.users
         ]
 

@@ -1,6 +1,6 @@
 export default class ImportCompiledViewsError extends Error {
   constructor(public readonly internalError: Error) {
-    super("There is a problem with compiled views");
-    this.message = "There is a problem with compiled views. You should try recompiling.";
+    super("Views are not compiled properly");
+    this.message = "The compiled views module is not valid. You should try recompiling.";
   }
 }

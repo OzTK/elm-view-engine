@@ -1,3 +1,4 @@
+import * as createDebug from "debug";
 import * as fs from "fs";
 import * as mkdirp from "mkdirp";
 import { ncp } from "ncp";
@@ -24,20 +25,28 @@ export default class ElmViewEngine {
   private worker: ElmComponent<any>;
   private getViewRequests: Array<((view: ViewResult) => void) | undefined> = [];
   private requestsRecyclingPool: number[] = [];
-  private isFaulty = false;
+  private lastCompileError?: Error;
+  private isUpdated: boolean;
+  private watcher: fs.FSWatcher;
+
+  private debug: createDebug.IDebugger;
 
   public get options(): Options {
     return this._options;
   }
 
-  constructor(private _options: Options = new Options()) {}
+  constructor(private _options: Options = new Options()) {
+    this.debug = createDebug("elm-view-engine");
+    this.debug.log = console.debug.bind(console);
+  }
 
   /**
    * Compiles the views in the views folder and generates a javascript module
    * Outputted in the Options.compilePath folder (defaults to views folder).
    */
   public compile(): Promise<string> {
-    this.isFaulty = false;
+    this.debug("Starting compilation...");
+    this.lastCompileError = undefined;
     return Promise.all<string[], string, string>([
       this.readViewsDir(),
       this.readTemplate(),
@@ -55,13 +64,24 @@ export default class ElmViewEngine {
           modulePath,
         );
 
+        this.debug("Compilation succeeded. Cleaning...");
+
         // Awaiting to avoid interruption by the end of the process
         await this.cleanGenerated();
 
+        this.isUpdated = true;
+
+        if (!this.watcher) {
+          this.watchCompiledViews();
+        }
+
+        this.debug("Cleaning done");
+        
         return jsModulePath;
       })
       .catch(async err => {
-        this.isFaulty = true;
+        this.debug("Compilation failed: %s", err);
+        this.lastCompileError = err;
         await this.cleanGenerated();
         throw err;
       });
@@ -92,13 +112,15 @@ export default class ElmViewEngine {
    */
   public getView(name?: string | null, context?: any): Promise<string> {
     return new Promise<string>(async (resolve, reject) => {
-      const compileError = new Error(
-        "Views need to be compiled before rendering them",
-      );
+      if (this.lastCompileError) {
+        return reject(new ImportCompiledViewsError(this.lastCompileError));
+      }
 
       const needsCompilation = await this.needsCompilation();
-      if (this.isFaulty || needsCompilation) {
-        return reject(compileError);
+      if (needsCompilation) {
+        return reject(
+          new Error("Views need to be compiled before rendering them"),
+        );
       }
 
       if (!name || name === "") {
@@ -106,7 +128,7 @@ export default class ElmViewEngine {
       }
 
       // Lazy-instantianting the worker
-      if (!this.worker) {
+      if (!this.worker || this.isUpdated) {
         const jsModulePath = path.join(
           this._options.compilePath,
           ElmViewEngine.OUTPUT_JS_FILENAME,
@@ -115,7 +137,11 @@ export default class ElmViewEngine {
           delete require.cache[require.resolve(jsModulePath)];
           this.worker = require(jsModulePath).Main.worker();
         } catch (error) {
+          this.lastCompileError = error;
           return reject(new ImportCompiledViewsError(error));
+        } finally {
+          this.isUpdated = false;
+          this.watchCompiledViews();
         }
       }
 
@@ -130,6 +156,22 @@ export default class ElmViewEngine {
   }
 
   // Compilation
+
+  private watchCompiledViews() {
+    this.watcher = fs.watch(
+      path.join(this._options.compilePath, ElmViewEngine.OUTPUT_JS_FILENAME),
+      e => {
+        if (e === "change" || e === "rename") {
+          this.isUpdated = true;
+          this.lastCompileError = undefined;
+        }
+      },
+    );
+  }
+
+  // private stopWatchingCompiledViews() {
+  //   this.watcher.removeAllListeners();
+  // }
 
   private cleanGenerated(): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -188,7 +230,7 @@ export default class ElmViewEngine {
           return reject(err);
         }
 
-        if (this.isFaulty) {
+        if (this.lastCompileError) {
           return reject(
             new Error("Engine is in a faulty state. Aborting dir creation"),
           );

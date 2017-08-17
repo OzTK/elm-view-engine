@@ -37,14 +37,13 @@ describe("module entry point", () => {
       return __express(
         path.join(mockProject.viewsPath, "UsersView"),
         {},
-        () => true,
       ).should.be.rejectedWith(
-        "configure() must be called before trying to call __express()",
+        "#configure must be called before calling #__express",
       );
     });
 
     context("when a required elm module was deleted", () => {
-      before(async function(this: Mocha.IHookCallbackContext) {
+      beforeEach(async function(this: Mocha.IHookCallbackContext) {
         this.timeout(COMPILE_TIMEOUT);
         mockProject.deleteExternalViewSync();
 
@@ -64,9 +63,8 @@ describe("module entry point", () => {
         await __express(
           path.join(mockProject.viewsPath, "OtherView.elm"),
           {},
-          () => true,
         ).should.be.rejectedWith(
-          "configure() must be called before trying to call __express()",
+          "The compiled views module is not valid. You should try recompiling.",
         );
       });
     });
@@ -79,7 +77,6 @@ describe("module entry point", () => {
       return __express(
         path.join(mockProject.viewsPath, "HasContextView.elm"),
         "paul",
-        () => true,
       ).should.eventually.be.a
         .String()
         .and.containEql("paul");
@@ -91,7 +88,7 @@ describe("module entry point", () => {
       await configure(customEngine);
 
       // Test/Assert
-      return __express("Anything.elm", {}, () => true).should.be.rejectedWith(
+      return __express("Anything.elm", {}).should.be.rejectedWith(
         "VIEW FAILED",
       );
     });
@@ -228,8 +225,8 @@ describe("module entry point", () => {
 
       // Assert
       success.should.be.true();
-      return __express("anything.elm", {}, () => true).should.be.rejectedWith(
-        "configure() must be called before trying to call __express()",
+      return __express("anything.elm", {}).should.be.rejectedWith(
+        "Views need to be compiled before rendering them",
       );
     });
 

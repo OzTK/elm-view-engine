@@ -243,9 +243,12 @@ describe("ElmViewEngine", () => {
       );
     });
 
-    describe("if compiled views js module exists", () => {
-      before(() => {
-        engine = new ElmViewEngine(engineOptions);
+    context("if compiled views js module exists", () => {
+      let moduleExistEngine: ElmViewEngine;
+      before(() => mockHelper.importCompiledViews());
+
+      beforeEach(() => {
+        moduleExistEngine = new ElmViewEngine(engineOptions);
       });
 
       afterEach(() => mockHelper.restoreFiles());
@@ -255,7 +258,9 @@ describe("ElmViewEngine", () => {
         await mockHelper.importCompiledViews(true);
 
         // Test/Assert
-        return engine.getView("UsersView").should.be.rejectedWith(ImportCompiledViewsError);
+        return moduleExistEngine
+          .getView("UsersView")
+          .should.be.rejectedWith(ImportCompiledViewsError);
       });
 
       it("returns views properly without needing to compile beforehand", async () => {
@@ -265,15 +270,44 @@ describe("ElmViewEngine", () => {
           path.join(FIXTURES_PATH, "UsersView.html"),
           "UTF-8",
         );
-  
+
         // Test
-        const usersActualView = await engine.getView("UsersView");
-  
+        const usersActualView = await moduleExistEngine.getView("UsersView");
+
         // Assert
         removeFormat(usersActualView).should.be.equal(
           removeFormat(usersExpectedView),
         );
       });
+    });
+
+    context("when watching compiled views", () => {
+      let watchEngine: ElmViewEngine;
+
+      before(() => {
+        return mockHelper
+          .restoreFiles()
+          .then(() => mockHelper.importCompiledViews());
+      });
+
+      beforeEach(() => (watchEngine = new ElmViewEngine(engineOptions)));
+
+      it("should update worker everytime js module is modified", async () => {
+        const shouldRender = watchEngine
+          .getView("UsersView")
+          .should.be.fulfilled();
+
+        await mockHelper.importCompiledViews(true);
+
+        const shouldFail = new Promise(resolve => {
+          setTimeout(
+            () =>
+              resolve(watchEngine.getView("UsersView").should.be.rejected()),
+            10000,
+          );
+        });
+        return Promise.all([shouldRender, shouldFail]);
+      }).timeout(COMPILE_TIMEOUT);
     });
 
     const removeFormat = (html: string) =>

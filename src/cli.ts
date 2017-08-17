@@ -19,4 +19,4 @@ program
 
 compile(createOptions(program))
   .then(() => process.exit(0))
-  .catch(process.exit(1));
+  .catch(() => process.exit(1));

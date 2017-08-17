@@ -66,22 +66,25 @@ export async function configure(
 export async function __express(
   filePath: string,
   options: any,
-  callback: (err?: Error | string | null, content?: string) => void,
+  callback?: (err?: Error | string | null, content?: string) => void,
 ): Promise<string> {
-  if (!currentOptions || !engine || await engine.needsCompilation()) {
-    throw new Error(
-      "configure() must be called before trying to call __express()",
-    );
+  if (!engine) {
+    throw new Error("#configure must be called before calling #__express");
   }
 
   const viewName = path.parse(filePath).name;
 
   try {
     const html = await engine.getView(viewName, options);
-    callback(null, html);
+    if (callback) {
+      callback(null, html);
+    }
     return html;
   } catch (err) {
-    callback(err);
+    if (callback) {
+      callback(err);
+      return "";
+    }
     throw err;
   }
 }

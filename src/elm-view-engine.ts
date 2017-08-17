@@ -76,7 +76,7 @@ export default class ElmViewEngine {
         }
 
         this.debug("Cleaning done");
-        
+
         return jsModulePath;
       })
       .catch(async err => {
@@ -281,20 +281,31 @@ export default class ElmViewEngine {
     modulePath: string,
   ): Promise<string> {
     const projectPath = path.dirname(modulePath);
-    const projConfig = await this.loadElmPackageConfig(options.projectRoot);
-    const myConfig = await this.loadElmPackageConfig(__dirname);
 
-    myConfig.dependencies = {
+    // Loading engine + project elm configs
+    const configs = await Promise.all([
+      this.loadElmPackageConfig(options.projectRoot),
+      this.loadElmPackageConfig(__dirname),
+    ]);
+    const projConfig = configs[0];
+    const engineConfig = configs[1];
+
+    // Merging dependencies in engine elm config
+    engineConfig.dependencies = {
       ...projConfig.dependencies,
-      ...myConfig.dependencies,
+      ...engineConfig.dependencies,
     };
 
-    myConfig["source-directories"].push(
+    // Merging sources in engine elm config after normalizing all the paths
+    engineConfig["source-directories"].push(
       ...projConfig["source-directories"].map((dep: string) => {
+        // paths are relative to project root, so we make them absolute
         let sourcePath = dep.replace(
           "..",
           path.join(options.projectRoot, ".."),
         );
+
+        // If some paths use ./ we replace that with project root
         if (sourcePath.startsWith("./")) {
           sourcePath = sourcePath.replace(".", options.projectRoot);
         }
@@ -303,7 +314,7 @@ export default class ElmViewEngine {
       }),
     );
 
-    await this.outputElmPackageConfig(projectPath, myConfig);
+    await this.outputElmPackageConfig(projectPath, engineConfig);
 
     try {
       // ** Keeping this for debugging as compiler.compileWorker
@@ -358,24 +369,14 @@ export default class ElmViewEngine {
     });
   }
 
-  private loadElmPackageConfig(modulePathOrDir: string): Promise<any> {
+  private loadElmPackageConfig(elmRoot: string): Promise<any> {
     return new Promise((resolve, reject) => {
-      // Let's begin with the callback hell!
       fs.readFile(
-        path.join(modulePathOrDir, "elm-package.json"),
+        path.join(elmRoot, "elm-package.json"),
         "UTF-8",
         (err, content) => {
           if (err) {
-            return fs.readFile(
-              path.join(path.dirname(modulePathOrDir), "elm-package.json"),
-              "UTF-8",
-              (err2, content2) => {
-                if (err2) {
-                  return reject(err);
-                }
-                return resolve(JSON.parse(content2));
-              },
-            );
+            return reject(err);
           }
           return resolve(JSON.parse(content));
         },

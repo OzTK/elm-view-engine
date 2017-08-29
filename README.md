@@ -99,16 +99,28 @@ eve.configure(options).then(() => {
 
 #### Views
 
-Your elm views must have a
+Your elm views must expose 2 functions with the following signatures:
+
 ```elm
-view : msg -> Json.Encode.Value -> Result String (Html msg)
+view : MyContext -> Html MyMsg
+context : Json.Decode.Decoder MyContext
 ```
 
-method in order for them to be compiled successfully where:
+If they don't, views compilation will fail.
 
-* msg is a potential message type coming from imported views but unlikely to be used as `view` will only be called once
-* The second parameter is the json context of the view. It can be anything and has to be decoded by you successfully.
-* If the context fails to decode, the Result return value can be used to return the error and it will propagate back to the caller.
+* MyContext is a record defining the structure of the context passed to the view. If you don't need any context for your view, you can use the following template:
+```elm
+context : Json.Decode.Decoder ()
+context =
+    decode ()
+
+
+view : () -> Html Never
+view _ =
+    -- Code for your view
+```
+* `context` returns a decoder for the context that will deserialize the json context internally to the engine
+* Passing an invalid context when requesting a view will result in an error from the engine
 
 ##### Example
 
@@ -130,30 +142,22 @@ type alias SimpleContext =
     { simpleName : String }
 
 
-simpleContext : Json.Encode.Value -> Result String SimpleContext
-simpleContext =
+context : Json.Decode.Decoder SimpleContext
+context =
     decode SimpleContext
         |> required "simpleName" string
-        |> decodeValue
 
 
 
 -- View
 
 
-view : msg -> Json.Encode.Value -> Result String (Html msg)
-view msg jsonCtx =
-    simpleContext jsonCtx
-        |> Result.map .simpleName
-        |> Result.map render
-
-
-render : String -> Html msg
-render username =
+view : SimpleContext -> Html Never
+view ctx =
     div
         []
         [ h1 []
-            [ text ("Hello " ++ username ++ "!")
+            [ text ("Hello " ++ ctx.simpleName ++ "!")
             ]
         ]
 ```

@@ -1,40 +1,20 @@
-module Home exposing (view)
+module Home exposing (view, context)
 
 import Html exposing (Html, h1, div, text)
-import Json.Encode
-import Json.Decode exposing (decodeValue, string)
+import Json.Decode exposing (string)
 import Json.Decode.Pipeline exposing (decode, required)
 
 
--- Model
+context : Json.Decode.Decoder ()
+context =
+    decode ()
 
 
-type alias TitleContext =
-    { title : String }
-
-
-titleContext : Json.Encode.Value -> Result String TitleContext
-titleContext =
-    decode TitleContext
-        |> required "title" string
-        |> decodeValue
-
-
-
--- View
-
-
-view : Json.Encode.Value -> Result String (Html Never)
-view jsonCtx =
-    titleContext jsonCtx
-        |> Result.map render
-
-
-render : TitleContext -> Html Never
-render ctx =
+view : () -> Html Never
+view _ =
     div
         []
         [ h1 []
-            [ text ("Hello " ++ ctx.title ++ "!")
+            [ text ("Hello !")
             ]
         ]

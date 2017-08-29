@@ -188,6 +188,8 @@ describe("module entry point", () => {
           mockProject.projectPath,
           undefined,
           true,
+          undefined,
+          path.join(process.cwd(), "node_modules/.bin/elm-make"),
         ),
       );
       const time = process.hrtime(start);

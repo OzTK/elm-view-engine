@@ -321,6 +321,7 @@ export default class ElmViewEngine {
       // ** doesn't return elm compiler's message
       const jsCode = await compiler.compileToString(modulePath, {
         cwd: projectPath,
+        pathToMake: options.elmMake,
         verbose: process.env.NODE_ENV === "development",
         yes: true,
       });

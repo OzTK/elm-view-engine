@@ -25,7 +25,14 @@ describe("ElmViewEngine", () => {
 
   before(async () => {
     mockHelper = await MockProjectHelper.createProject(FIXTURES_PATH);
-    engineOptions = new Options(mockHelper.viewsPath, mockHelper.projectPath);
+    engineOptions = new Options(
+      mockHelper.viewsPath,
+      mockHelper.projectPath,
+      undefined,
+      undefined,
+      undefined,
+      path.join(process.cwd(), "node_modules/.bin/elm-make"),
+    );
     engine = new ElmViewEngine(engineOptions);
   });
 

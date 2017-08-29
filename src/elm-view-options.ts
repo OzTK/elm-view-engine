@@ -15,5 +15,6 @@ export default class Options {
     public expressApp?: any,
     public forceCompilation: boolean = false,
     public compilePath: string = viewsDirPath,
+    public elmMake?: string
   ) {}
 }

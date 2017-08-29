@@ -24,14 +24,14 @@ simpleContext =
 -- View
 
 
-view : msg -> Json.Encode.Value -> Result String (Html msg)
-view msg jsonCtx =
+view : Json.Encode.Value -> Result String (Html ())
+view jsonCtx =
     simpleContext jsonCtx
         |> Result.map .simpleName
         |> Result.map render
 
 
-render : String -> Html msg
+render : String -> Html ()
 render username =
     div
         []

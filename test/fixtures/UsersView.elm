@@ -5,8 +5,8 @@ import Html.Attributes exposing (rel, attribute, href, src, id, class, charset, 
 import Json.Encode as JE
 
 
-view : msg -> JE.Value -> Result String (Html msg)
-view msg rawCtx =
+view : JE.Value -> Result String (Html ())
+view rawCtx =
     div [ id "app" ]
         [ h1 [] [ text "My Page" ]
         , p [] [ text "My Content" ]
@@ -15,7 +15,7 @@ view msg rawCtx =
         |> Ok
 
 
-layout : Html.Html msg -> Html.Html msg
+layout : Html.Html () -> Html.Html ()
 layout content =
     node "html"
         []

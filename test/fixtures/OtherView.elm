@@ -5,12 +5,12 @@ import Json.Encode
 import InvalidView
 
 
-view : msg -> Json.Encode.Value -> Result String (Html msg)
-view msg jsonCtx =
+view : Json.Encode.Value -> Result String (Html ())
+view jsonCtx =
     Ok render
 
 
-render : Html msg
+render : Html ()
 render =
     div
         []

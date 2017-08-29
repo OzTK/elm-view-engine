@@ -38,12 +38,12 @@ type alias GetHtmlResult =
 
 
 type alias Model =
-    Dict String (Context -> Result String (Html Msg))
+    Dict String (Context -> Result String (Html ()))
 
 
 init : ( Model, Cmd msg )
 init =
-    ( Dict.empty
+    ( Dict.fromList []
     , Cmd.none
     )
 
@@ -81,7 +81,7 @@ getViewHtml views context name =
             |> Maybe.withDefault (GetHtmlResult (Just "View was not found") Nothing)
 
 
-renderView : Context -> (Context -> Result String (Html Msg)) -> (Maybe Int -> GetHtmlResult)
+renderView : Context -> (Context -> Result String (Html ())) -> (Maybe Int -> GetHtmlResult)
 renderView context view =
     case view context of
         Ok view ->
@@ -92,6 +92,11 @@ renderView context view =
 
         Err error ->
             GetHtmlResult (Just "Invalid context for this view") Nothing
+
+
+map : (Context -> Result String (Html msg)) -> (Context -> Result String (Html ()))
+map fn =
+    fn >> Result.map (Html.map <| always ())
 
 
 

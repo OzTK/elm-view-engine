@@ -1,3 +1,29 @@
+## 2.0.0 (2017-08-29)
+
+##### Continuous Integration
+
+* **travis:** Increased wait for tests execution ([672b6763](https://github.com/OzTK/elm-template-engine/commit/672b6763c71dc5524046c698df3ba7766892e546))
+* Extending travis wait tests execution ([46eec49f](https://github.com/OzTK/elm-template-engine/commit/46eec49f5325552b3cc1e498a586237bf1658ab4))
+
+##### Documentation Changes
+
+* **readme:**
+  * Updated elm pre-requisites ([645796fc](https://github.com/OzTK/elm-template-engine/commit/645796fcc9646cff0ab18d1e960f2f67e9858a61))
+  * Updated readme for new API ([c164258b](https://github.com/OzTK/elm-template-engine/commit/c164258b6e62cd7560f777fb0597ad374d0254f4))
+* **examples:**
+  * Updated example to reflect the new API ([069a6fd9](https://github.com/OzTK/elm-template-engine/commit/069a6fd9ea13edb4d4b3486a89cdc7afb3d2e3d7))
+  * Updated example with new API ([a510e25f](https://github.com/OzTK/elm-template-engine/commit/a510e25f1de48a6bd1fafb13eff503b4152a3402))
+
+##### New Features
+
+* **options:** Allowing to pass path to elm-make in options ([82e20a17](https://github.com/OzTK/elm-template-engine/commit/82e20a17985e37312c421351e732d3a5a953181e))
+
+##### Refactors
+
+* **views:**
+  * consolidated views format by putting deserialization in the engine ([ec16ee6a](https://github.com/OzTK/elm-template-engine/commit/ec16ee6ad53248be1b1634cc7147a54eb7a1f8ed))
+  * Changed views function format -> removed unnecessary msg constraint ([297fd79c](https://github.com/OzTK/elm-template-engine/commit/297fd79c0690b763a1f167e7b455fde60e919e80))
+
 ### 1.1.0 (2017-08-17)
 
 ##### Chores

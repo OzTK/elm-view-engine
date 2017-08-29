@@ -23,8 +23,9 @@
   "keywords": [
     "elm",
     "nodejs",
-    "template",
-    "expressjs"
+    "template-engine",
+    "expressjs",
+    "view-engine"
   ],
   "author": "Paul Duguet",
   "license": "ISC",

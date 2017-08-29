@@ -1,21 +1,26 @@
-module UsersView exposing (view)
+module UsersView exposing (view, context)
 
 import Html exposing (Html, body, h1, h3, header, div, ul, li, a, text, node, p)
 import Html.Attributes exposing (rel, attribute, href, src, id, class, charset, name)
-import Json.Encode as JE
+import Json.Decode exposing (Decoder)
+import Json.Decode.Pipeline exposing (decode)
 
 
-view : JE.Value -> Result String (Html ())
-view rawCtx =
+context : Decoder ()
+context =
+    decode ()
+
+
+view : () -> Html Never
+view _ =
     div [ id "app" ]
         [ h1 [] [ text "My Page" ]
         , p [] [ text "My Content" ]
         ]
         |> layout
-        |> Ok
 
 
-layout : Html.Html () -> Html.Html ()
+layout : Html.Html Never -> Html.Html Never
 layout content =
     node "html"
         []

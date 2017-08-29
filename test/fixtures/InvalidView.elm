@@ -1,15 +1,21 @@
-module InvalidView exposing (view)
+module InvalidView exposing (view, context)
 
 import Html exposing (Html, h1, div, text)
-import Json.Encode
+import Json.Decode exposing (Decoder)
+import Json.Decode.Pipeline exposing (decode)
 
 
-view : Json.Encode.Value -> Result String (Html (Never -> Never))
-view jsonCtx =
-    Ok render
+context : Decoder ()
+context =
+    decode ()
 
 
-render : Html (Never -> Never)
+view : () -> Html Never
+view _ =
+    render
+
+
+render : Html Never
 render =
     div
         []

@@ -1,8 +1,7 @@
-module HasContextView exposing (view)
+module HasContextView exposing (view, context)
 
 import Html exposing (Html, h1, div, text)
-import Json.Encode
-import Json.Decode exposing (decodeValue, string)
+import Json.Decode exposing (Decoder, decodeValue, string)
 import Json.Decode.Pipeline exposing (decode, required)
 
 
@@ -13,25 +12,22 @@ type alias SimpleContext =
     { simpleName : String }
 
 
-simpleContext : Json.Encode.Value -> Result String SimpleContext
-simpleContext =
+context : Decoder SimpleContext
+context =
     decode SimpleContext
         |> required "simpleName" string
-        |> decodeValue
 
 
 
 -- View
 
 
-view : Json.Encode.Value -> Result String (Html ())
-view jsonCtx =
-    simpleContext jsonCtx
-        |> Result.map .simpleName
-        |> Result.map render
+view : SimpleContext -> Html Never
+view =
+    .simpleName >> render
 
 
-render : String -> Html ()
+render : String -> Html Never
 render username =
     div
         []

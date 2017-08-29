@@ -5,6 +5,10 @@ import Html exposing (Html, h1, div, text)
 import Platform exposing (program)
 import Dict exposing (Dict)
 import Json.Encode
+import Json.Decode exposing (decodeValue)
+import Users
+import Home
+import Error
 
 
 -- Ports
@@ -43,7 +47,11 @@ type alias Model =
 
 init : ( Model, Cmd msg )
 init =
-    ( Dict.fromList []
+    ( Dict.fromList
+        [ ( "Home", map Home.view Home.context )
+        , ( "Users", map Users.view Users.context )
+        , ( "Error", map Error.view Error.context )
+        ]
     , Cmd.none
     )
 
@@ -94,9 +102,9 @@ renderView context view =
             GetHtmlResult (Just "Invalid context for this view") Nothing
 
 
-map : (Context -> Result String (Html msg)) -> (Context -> Result String (Html ()))
-map fn =
-    fn >> Result.map (Html.map <| always ())
+map : (ctx -> Html msg) -> Json.Decode.Decoder ctx -> Context -> Result String (Html ())
+map view ctx =
+    decodeValue ctx >> Result.map view >> Result.map (Html.map <| always ())
 
 
 

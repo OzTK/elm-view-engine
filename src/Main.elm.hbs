@@ -5,6 +5,7 @@ import Html exposing (Html, h1, div, text)
 import Platform exposing (program)
 import Dict exposing (Dict)
 import Json.Encode
+import Json.Decode exposing (decodeValue)
 {{#each modules}}
 import {{this}}
 {{/each}}
@@ -47,8 +48,8 @@ type alias Model =
 init : ( Model, Cmd msg )
 init =
     ( Dict.fromList
-        [ {{#each modules}}{{#if @first}}( "{{this}}", map {{this}}.view{{else}}
-        , ( "{{this}}", map {{this}}.view{{/if}} ){{/each}}
+        [ {{#each modules}}{{#if @first}}( "{{this}}", map {{this}}.view {{this}}.context{{else}}
+        , ( "{{this}}", map {{this}}.view {{this}}.context{{/if}} ){{/each}}
         ]
     , Cmd.none
     )
@@ -100,9 +101,9 @@ renderView context view =
             GetHtmlResult (Just "Invalid context for this view") Nothing
 
 
-map : (Context -> Result String (Html msg)) -> (Context -> Result String (Html ()))
-map fn =
-    fn >> Result.map (Html.map <| always ())
+map : (ctx -> Html msg) -> Json.Decode.Decoder ctx -> Context -> Result String (Html ())
+map view ctx =
+    decodeValue ctx >> Result.map view >> Result.map (Html.map <| always ())
 
 
 

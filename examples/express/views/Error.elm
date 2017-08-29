@@ -39,10 +39,8 @@ errorContext =
 -- View
 
 
-view : msg -> Json.Encode.Value -> Result String (Html msg)
-view msg jsonCtx =
-    -- errorContext jsonCtx
-    --     |> Result.map render
+view : Json.Encode.Value -> Result String (Html Never)
+view jsonCtx =
     case errorContext jsonCtx of
         Ok ctx ->
             Ok <| render ctx
@@ -51,7 +49,7 @@ view msg jsonCtx =
             Ok <| h3 [] [ text err ]
 
 
-render : ErrorContext -> Html msg
+render : ErrorContext -> Html Never
 render ctx =
     div
         []

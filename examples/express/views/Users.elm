@@ -4,6 +4,7 @@ import Html exposing (Html, h1, div, text, ul, li)
 import Json.Encode
 import Json.Decode exposing (decodeValue, list, string)
 import Json.Decode.Pipeline exposing (decode, required)
+import Search
 
 
 -- Model
@@ -24,17 +25,18 @@ titleContext =
 -- View
 
 
-view : msg -> Json.Encode.Value -> Result String (Html msg)
-view msg jsonCtx =
+view : Json.Encode.Value -> Result String (Html Search.Msg)
+view jsonCtx =
     titleContext jsonCtx
         |> Result.map render
 
 
-render : UsersContext -> Html msg
+render : UsersContext -> Html Search.Msg
 render ctx =
     div
         []
-        [ h1 [] [ text "Userzzz" ]
+        [ h1 [] [ text "Users" ]
+        , Search.view (Search.search "")
         , ul [] <| List.map user ctx.users
         ]
 

@@ -24,13 +24,13 @@ titleContext =
 -- View
 
 
-view : msg -> Json.Encode.Value -> Result String (Html msg)
-view msg jsonCtx =
+view : Json.Encode.Value -> Result String (Html Never)
+view jsonCtx =
     titleContext jsonCtx
         |> Result.map render
 
 
-render : TitleContext -> Html msg
+render : TitleContext -> Html Never
 render ctx =
     div
         []

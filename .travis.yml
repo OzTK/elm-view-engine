@@ -13,6 +13,6 @@ install:
 script:
   - npm run-script snyk
   - npm run build
-  - travis_wait 30 npm test
+  - travis_wait 40 npm test
 after_success:
   - npm run coverage

@@ -12,10 +12,15 @@ The 2 simple goals of this project are:
 
 ### Prerequisites
 
-At that time, you need the 0.18 elm compiler to be installed globally on your machine, otherwise views compiling will fail (this will change in the future):
+Elm needs to be installed either globally or locally in the project.
 
 ``` shell
-> npm i -g elm@0.18
+> npm i -g elm
+```
+or
+
+``` shell
+> npm i elm
 ```
 
 ### Installing
@@ -127,7 +132,7 @@ view _ =
 A view with a simple context:
 
 ```elm
-module Greeter exposing (view)
+module Greeter exposing (view, context)
 
 import Html exposing (Html, h1, div, text)
 import Json.Encode

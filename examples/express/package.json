@@ -6,7 +6,7 @@
     "start": "node ./bin/www",
     "watch": "npm-watch build:views",
     "//": "replace the following with elm-view-engine in your project",
-    "build:views": "node ../../lib/cli.js"
+    "build:views": "elm-view-engine"
   },
   "watch": {
     "build:views": {

@@ -8,6 +8,10 @@ The 2 simple goals of this project are:
 
 * Building views uniformly with the same technology (Elm!) and avoid having another template language in the stack.
 
+# BREAKING CHANGE
+
+Elm views format changed in v2.0! see [corresponding section](#views)
+
 ## Getting Started
 
 ### Prerequisites
@@ -102,7 +106,7 @@ eve.configure(options).then(() => {
 }));
 ```
 
-#### Views
+#### <a name="views"></a>Views
 
 Your elm views must expose 2 functions with the following signatures:
 
@@ -166,6 +170,16 @@ view ctx =
             ]
         ]
 ```
+
+#### Pre-compiling
+
+The views get compiled once when calling configure(). They are then cached and reused. This causes 2 inconveniences:
+* The initial compilation can take some time and clog your server if you compile at startup.
+* When a view is modified, it doesn't change right away: A new compilation is needed
+
+To overcome this, it is possible to compile your views with the CLI by using the `elm-view-engine` command. It will compile the views right away, and can be done before or after the server has started. The views can now be compiled beforehand or during server execution for development (See example for integration in npm scripts).
+
+Running `elm-view-engine -h` gives more info about the command.
 
 ## Running the tests
 

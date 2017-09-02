@@ -8,7 +8,7 @@ var app = require("../app");
 var debug = require("debug")("express:server");
 var http = require("http");
 var path = require("path");
-var eve = require("../../../lib");
+var eve = require("elm-view-engine");
 
 /**
  * Get port from environment and store in Express.

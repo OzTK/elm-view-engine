@@ -1,10 +1,8 @@
-import * as clc from "cli-color";
+import * as $ from "chalk";
 import * as program from "commander";
-import * as util from "util";
 
 import ElmViewEngine from "./elm-view-engine";
 import Options from "./elm-view-options";
-
 
 export function createOptions(pgrm?: program.CommanderStatic): Options {
   const options = new Options();
@@ -29,19 +27,23 @@ export function createOptions(pgrm?: program.CommanderStatic): Options {
 
 export function compile(options: Options): Promise<any> {
   // tslint:disable-next-line:no-console
-  console.log(clc.yellow("Starting views compilation..."));
+  console.log($.yellow("Starting views compilation..."));
   const eng = new ElmViewEngine(options);
   return eng
     .compile()
     .then(path => {
       // tslint:disable-next-line:no-console
       console.log(
-        clc.green(util.format("Successfully compiled views to %s", path)),
+        $.green(
+          "Successfully compiled views to ",
+          $.green.bold.underline(path)
+        ),
+        false
       );
     })
     .catch(err => {
       // tslint:disable-next-line:no-console
-      console.log(clc.red(util.format("Error compiling: %s", err)));
+      console.log($.red("Error compiling: ", $.red.bold(err)));
       throw err;
     });
 }

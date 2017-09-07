@@ -317,8 +317,6 @@ export default class ElmViewEngine {
     await this.outputElmPackageConfig(projectPath, engineConfig);
 
     try {
-      // ** Keeping this for debugging as compiler.compileWorker
-      // ** doesn't return elm compiler's message
       const jsCode = await compiler.compileToString(modulePath, {
         cwd: projectPath,
         pathToMake: options.elmMake,
@@ -328,11 +326,8 @@ export default class ElmViewEngine {
 
       return this.outputElmJsModule(jsCode);
     } catch (err) {
-      // Throwing a human readable message as the compiler
-      // will only return a vague process error message
-      throw new Error(
-        "One or more views don't compile. You should check your elm code!",
-      );
+      this.debug(err);
+      throw err;
     }
   }
 

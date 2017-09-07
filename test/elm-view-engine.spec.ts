@@ -96,9 +96,7 @@ describe("ElmViewEngine", () => {
       // Test/Assert
       return engine
         .compile()
-        .should.be.rejectedWith(
-          "One or more views don't compile. You should check your elm code!",
-        );
+        .should.be.rejected();
     }).timeout(COMPILE_TIMEOUT); // If dependencies have to be downloaded it might take some time
 
     it("compiles to valid elm code and outputs the module's js file", async () => {

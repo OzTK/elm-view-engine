@@ -3,6 +3,7 @@ import * as fs from "fs";
 import * as mkdirp from "mkdirp";
 import { ncp } from "ncp";
 import * as path from "path";
+import * as readline from "readline";
 import * as rimraf from "rimraf";
 
 import * as hbs from "handlebars";
@@ -16,7 +17,7 @@ import ViewResult from "./view-result";
 export default class ElmViewEngine {
   public static readonly GENERATION_DIR_BASE_PATH = path.join(
     __dirname,
-    "generated",
+    "generated"
   );
 
   private static readonly TEMPLATE_PATH = path.join(__dirname, "Main.elm.hbs");
@@ -54,14 +55,14 @@ export default class ElmViewEngine {
     ])
       .then(async result => {
         const depsCopy = this.copyDependenciesFromProject(result[2]);
-        const elmCode = this.compileAndOutputTemplate(result[0], result[1]);
+        const elmCode = await this.compileAndOutputTemplate(result[0], result[1]);
         const modulePath = await this.saveMainElmFile(result[2], elmCode);
 
         // Waiting for dependencies to be copied before compiling
         await depsCopy;
         const jsModulePath = await this.compileElmModule(
           this._options,
-          modulePath,
+          modulePath
         );
 
         this.debug("Compilation succeeded. Cleaning...");
@@ -100,7 +101,7 @@ export default class ElmViewEngine {
           }
 
           return resolve(false);
-        },
+        }
       );
     });
   }
@@ -119,7 +120,7 @@ export default class ElmViewEngine {
       const needsCompilation = await this.needsCompilation();
       if (needsCompilation) {
         return reject(
-          new Error("Views need to be compiled before rendering them"),
+          new Error("Views need to be compiled before rendering them")
         );
       }
 
@@ -131,7 +132,7 @@ export default class ElmViewEngine {
       if (!this.worker || this.isUpdated) {
         const jsModulePath = path.join(
           this._options.compilePath,
-          ElmViewEngine.OUTPUT_JS_FILENAME,
+          ElmViewEngine.OUTPUT_JS_FILENAME
         );
         try {
           delete require.cache[require.resolve(jsModulePath)];
@@ -148,7 +149,7 @@ export default class ElmViewEngine {
       const id = this.createRequestHandler(
         resolve,
         reject,
-        this.worker.ports.receiveHtml,
+        this.worker.ports.receiveHtml
       );
       this.worker.ports.receiveHtml.subscribe(this.getViewRequests[id]);
       this.worker.ports.getView.send(new ViewParams(id, name, context));
@@ -165,7 +166,7 @@ export default class ElmViewEngine {
           this.isUpdated = true;
           this.lastCompileError = undefined;
         }
-      },
+      }
     );
   }
 
@@ -179,8 +180,8 @@ export default class ElmViewEngine {
         if (err2) {
           return reject(
             new Error(
-              "Failed to clean generated files. Please do it manually: " + err2,
-            ),
+              "Failed to clean generated files. Please do it manually: " + err2
+            )
           );
         }
         return resolve();
@@ -210,17 +211,34 @@ export default class ElmViewEngine {
             return reject(errReadTpl);
           }
           return resolve(content);
-        },
+        }
       );
     });
   }
 
-  private compileAndOutputTemplate(files: string[], templateContent: string) {
-    const modules = files
+  private async compileAndOutputTemplate(files: string[], templateContent: string): Promise<string> {
+    const modules = await Promise.all(files
       .filter(f => f.endsWith(".elm"))
-      .map(f => f.replace(".elm", ""));
+      .map(f => path.join(this._options.viewsDirPath, f))
+      .map(this.getModuleName));
+    
     const template = hbs.compile(templateContent);
     return template({ modules });
+  }
+
+  private getModuleName(file: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = readline.createInterface(fs.createReadStream(file));
+      reader.on("line", (line: string) => {
+        reader.close();
+        const parts = line.split(" ");
+        if (parts.length < 4) {
+          return reject(new Error(`Impossible to extract module name from ${file}`));
+        }
+
+        return resolve(parts[1]);
+      });
+    });
   }
 
   private ensureTempDirStructure(): Promise<string> {
@@ -232,7 +250,7 @@ export default class ElmViewEngine {
 
         if (this.lastCompileError) {
           return reject(
-            new Error("Engine is in a faulty state. Aborting dir creation"),
+            new Error("Engine is in a faulty state. Aborting dir creation")
           );
         }
 
@@ -256,14 +274,14 @@ export default class ElmViewEngine {
           // Not handling the error as it just means
           // dependencies will be downloaded
           resolve();
-        },
+        }
       );
     });
   }
 
   private saveMainElmFile(
     generatedProjectPath: string,
-    elmCode: string,
+    elmCode: string
   ): Promise<string> {
     const modulePath = path.join(generatedProjectPath, "Main.elm");
     return new Promise<string>((resolve, reject) => {
@@ -278,7 +296,7 @@ export default class ElmViewEngine {
 
   private async compileElmModule(
     options: Options,
-    modulePath: string,
+    modulePath: string
   ): Promise<string> {
     const projectPath = path.dirname(modulePath);
 
@@ -302,7 +320,7 @@ export default class ElmViewEngine {
         // paths are relative to project root, so we make them absolute
         let sourcePath = dep.replace(
           "..",
-          path.join(options.projectRoot, ".."),
+          path.join(options.projectRoot, "..")
         );
 
         // If some paths use ./ we replace that with project root
@@ -311,7 +329,7 @@ export default class ElmViewEngine {
         }
 
         return path.relative(projectPath, sourcePath);
-      }),
+      })
     );
 
     await this.outputElmPackageConfig(projectPath, engineConfig);
@@ -335,7 +353,7 @@ export default class ElmViewEngine {
     return new Promise<string>((resolve, reject) => {
       const outPath = path.join(
         this._options.compilePath,
-        ElmViewEngine.OUTPUT_JS_FILENAME,
+        ElmViewEngine.OUTPUT_JS_FILENAME
       );
       fs.writeFile(outPath, elmCode, error => {
         if (error) {
@@ -349,7 +367,7 @@ export default class ElmViewEngine {
 
   private outputElmPackageConfig(
     outputDir: string,
-    config: any,
+    config: any
   ): Promise<void> {
     return new Promise((resolve, reject) => {
       fs.writeFile(
@@ -360,7 +378,7 @@ export default class ElmViewEngine {
             return reject(err);
           }
           return resolve();
-        },
+        }
       );
     });
   }
@@ -375,7 +393,7 @@ export default class ElmViewEngine {
             return reject(err);
           }
           return resolve(JSON.parse(content));
-        },
+        }
       );
     });
   }
@@ -385,7 +403,7 @@ export default class ElmViewEngine {
   private createRequestHandler(
     resolve: (res?: string) => void,
     reject: (reason?: any) => void,
-    port: any,
+    port: any
   ): number {
     const recycledId = this.requestsRecyclingPool.shift();
     const reqId =

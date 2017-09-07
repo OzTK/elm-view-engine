@@ -1,4 +1,4 @@
-module Home exposing (view, context)
+module Views.Home exposing (view, context)
 
 import Html exposing (Html, h1, div, text)
 import Json.Decode exposing (string)

@@ -99,6 +99,24 @@ describe("ElmViewEngine", () => {
         .should.be.rejected();
     }).timeout(COMPILE_TIMEOUT); // If dependencies have to be downloaded it might take some time
 
+    it("successfully compiles a multi-part module (e.g: UI.MyModule)", async () => {
+      // Prepare
+      await mockHelper.importMultipartModule();
+
+      // Test
+      const modulePath = await engine.compile();
+
+      // Assert
+      modulePath.should.be.a
+        .String()
+        .and.be.equal(
+          path.join(engineOptions.viewsDirPath, "views.compiled.js"),
+        );
+
+      const moduleExists = fs.existsSync(modulePath);
+      moduleExists.should.be.true();
+    }).timeout(COMPILE_TIMEOUT);
+    
     it("compiles to valid elm code and outputs the module's js file", async () => {
       // Test
       const modulePath = await engine.compile();
@@ -297,7 +315,7 @@ describe("ElmViewEngine", () => {
 
       beforeEach(() => (watchEngine = new ElmViewEngine(engineOptions)));
 
-      it("should update worker everytime js module is modified", async () => {
+      it("updates worker everytime js module is modified", async () => {
         const shouldRender = watchEngine
           .getView("UsersView")
           .should.be.fulfilled();

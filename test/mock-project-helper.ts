@@ -106,6 +106,22 @@ export default class MockProjectHelper {
       });
     });
   }
+  
+  public importMultipartModule(): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const filename = "MultipartModule.elm";
+      const moduleSourcePath = path.join(this.fixturesPath, filename);
+      const destinationPath = path.join(this.viewsPath, "UI");
+
+      fs.mkdir(destinationPath, (err) => {
+        if (err) {
+          return reject(err);
+        }
+
+        copy([moduleSourcePath, destinationPath], true, this.handleCopyError(resolve, reject));
+      });
+    });
+  }
 
   private handleCopyError(
     resolve: (value?: any | PromiseLike<any>) => void,

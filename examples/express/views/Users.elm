@@ -1,4 +1,4 @@
-module Users exposing (view, context)
+module Views.Users exposing (view, context)
 
 import Html exposing (Html, h1, div, text, ul, li)
 import Json.Decode exposing (decodeValue, list, string)

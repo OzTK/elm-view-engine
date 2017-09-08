@@ -1,3 +1,25 @@
+### 2.1.0 (2017-09-08)
+
+##### Chores
+
+* **dependencies:** bumped up ([1d47e323](https://github.com/OzTK/elm-template-engine/commit/1d47e323ccc69b5018c2d38d04a19281cd405cb9))
+
+##### Documentation Changes
+
+* Updated README for CLI usage ([bf50d5d7](https://github.com/OzTK/elm-template-engine/commit/bf50d5d70f4774e7bc21fec6cd500edccfe0e3ef))
+
+##### New Features
+
+* **Compilation:** Returns elm compiler error when views compilation fails ([ca0b5ca9](https://github.com/OzTK/elm-template-engine/commit/ca0b5ca9f3e3591ccd1f36de463470119f9a1c9b))
+
+##### Other Changes
+
+* **dependencies:** Switched to chalk for output styling ([6f1f3d56](https://github.com/OzTK/elm-template-engine/commit/6f1f3d560b11ef8ee3eb5ec892010922f5e35bf7))
+
+##### Refactors
+
+* **example:** Using elm-view-engine instead of relative lib (npm link to make it work) ([cd8c267d](https://github.com/OzTK/elm-template-engine/commit/cd8c267d9da3b9d113af84eb06952c5c8ee8a40a))
+
 ## 2.0.0 (2017-08-29)
 
 ##### Continuous Integration

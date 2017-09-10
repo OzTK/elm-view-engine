@@ -10,7 +10,8 @@
     "build": "tsc -p .",
     "postbuild": "copyfiles -f package.json src/Main.elm.hbs src/elm-package.json README.md CHANGELOG.md LICENSE lib/ && copyfiles -u 1 'src/elm-server-side-renderer/**/*' lib/",
     "publish": "npm publish ./lib",
-    "snyk": "snyk test",
+    "snyk:t": "snyk test",
+    "snyk:m": "snyk monitor",
     "test": "nyc mocha --compilers ts:ts-node/register --require source-map-support/register --bail test/*.ts",
     "coverage:local": "nyc report --reporter=html",
     "coverage": "nyc report --reporter=text-lcov | coveralls"
@@ -65,7 +66,6 @@
     "@types/sinon": "^2.3.3",
     "copyfiles": "^1.2.0",
     "coveralls": "^2.13.1",
-    "elm": "^0.18.0",
     "express": "^4.15.4",
     "mocha": "^3.5.0",
     "npm-run-all": "^4.1.1",

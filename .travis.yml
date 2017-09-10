@@ -1,18 +1,38 @@
 language: node_js
 node_js:
   - '8'
-env:
-  global:
-    - SNYK_TOKEN="698bcdaf-92de-4a07-bdb7-df4a3fc358b3"
+
+cache:
+  - tests/fixtures/elm-stuff/build-artifacts
+  - sysconfcpus
+
+before_install:
+  - | # epic build time improvement - see https://github.com/elm-lang/elm-compiler/issues/1473#issuecomment-245704142
+    if [ ! -d sysconfcpus/bin ];
+    then
+      git clone https://github.com/obmarg/libsysconfcpus.git;
+      cd libsysconfcpus;
+      ./configure --prefix=$TRAVIS_BUILD_DIR/sysconfcpus;
+      make && make install;
+      cd ..;
+    fi
+
 install:
-  - npm i -g elm
+  - npm i -g elm@0.18
   - npm install
   - cd test/fixtures
-  - travis_retry travis_wait elm-make --yes
+  - travis_retry elm-package install
+  - |
+    mv $(npm config get prefix)/bin/elm-make $(npm config get prefix)/bin/elm-make-old
+    printf '%s\n\n' '#!/bin/bash' 'echo "Running elm-make with sysconfcpus -n 2"' '$TRAVIS_BUILD_DIR/sysconfcpus/bin/sysconfcpus -n 2 elm-make-old "$@"' > $(npm config get prefix)/bin/elm-make
+    chmod +x $(npm config get prefix)/bin/elm-make
+  - elm-make --yes
   - cd ../..
+  
 script:
   - npm run-script snyk
   - npm run build
-  - travis_wait 40 npm test
+  - npm test
+
 after_success:
   - npm run coverage

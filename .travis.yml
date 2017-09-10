@@ -20,6 +20,7 @@ before_install:
 install:
   - npm i -g elm@0.18
   - npm install
+  - npm run snyk:t
   - cd test/fixtures
   - travis_retry elm-package install -y
   - |
@@ -30,9 +31,9 @@ install:
   - cd ../..
 
 script:
-  - npm run-script snyk
   - npm run build
   - npm test
 
 after_success:
+  - npm run snyk:m
   - npm run coverage

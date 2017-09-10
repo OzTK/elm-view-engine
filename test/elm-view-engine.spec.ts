@@ -28,10 +28,6 @@ describe("ElmViewEngine", () => {
     engineOptions = new Options(
       mockHelper.viewsPath,
       mockHelper.projectPath,
-      undefined,
-      undefined,
-      undefined,
-      path.join(process.cwd(), "node_modules/.bin/elm-make"),
     );
     engine = new ElmViewEngine(engineOptions);
   });

@@ -21,14 +21,14 @@ install:
   - npm i -g elm@0.18
   - npm install
   - cd test/fixtures
-  - travis_retry elm-package install
+  - travis_retry elm-package install -y
   - |
     mv $(npm config get prefix)/bin/elm-make $(npm config get prefix)/bin/elm-make-old
     printf '%s\n\n' '#!/bin/bash' 'echo "Running elm-make with sysconfcpus -n 2"' '$TRAVIS_BUILD_DIR/sysconfcpus/bin/sysconfcpus -n 2 elm-make-old "$@"' > $(npm config get prefix)/bin/elm-make
     chmod +x $(npm config get prefix)/bin/elm-make
   - elm-make --yes
   - cd ../..
-  
+
 script:
   - npm run-script snyk
   - npm run build

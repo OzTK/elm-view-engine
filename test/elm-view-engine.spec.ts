@@ -13,7 +13,7 @@ import ImportCompiledViewsError from "../src/import-compiled-views-error";
 const HBS_TEMPLATE_PATH = path.join(__dirname, "..", "src", "Main.elm.hbs");
 const HBS_NONEXISTENT_TEMPLATE_PATH = path.join(
   path.dirname(HBS_TEMPLATE_PATH),
-  "Main_notexists.elm.hbs",
+  "Main_notexists.elm.hbs"
 );
 const FIXTURES_PATH = path.join(__dirname, "fixtures");
 const COMPILE_TIMEOUT = 1800000;
@@ -25,10 +25,7 @@ describe("ElmViewEngine", () => {
 
   before(async () => {
     mockHelper = await MockProjectHelper.createProject(FIXTURES_PATH);
-    engineOptions = new Options(
-      mockHelper.viewsPath,
-      mockHelper.projectPath,
-    );
+    engineOptions = new Options(mockHelper.viewsPath, mockHelper.projectPath);
     engine = new ElmViewEngine(engineOptions);
   });
 
@@ -37,9 +34,7 @@ describe("ElmViewEngine", () => {
   });
 
   describe("#compile()", () => {
-    afterEach(function(this: Mocha.IHookCallbackContext) {
-      return mockHelper.restoreFiles();
-    });
+    afterEach(() => mockHelper.restoreFiles());
 
     it("throws if no valid hbs template", () => {
       // Prepare
@@ -56,7 +51,7 @@ describe("ElmViewEngine", () => {
 
       // Assert
       return compiler.should.be.rejectedWith(
-        /ENOENT: no such file or directory, open '(.*)(\.elm\.hbs)'/,
+        /ENOENT: no such file or directory, open '(.*)(\.elm\.hbs)'/
       );
     });
 
@@ -68,8 +63,8 @@ describe("ElmViewEngine", () => {
         engine
           .compile()
           .should.be.rejectedWith(
-            /ENOENT: no such file or directory, scandir '(.*)'/,
-          ),
+            /ENOENT: no such file or directory, scandir '(.*)'/
+          )
       );
     });
 
@@ -81,7 +76,7 @@ describe("ElmViewEngine", () => {
       return engine
         .compile()
         .should.be.rejectedWith(
-          /ENOENT: no such file or directory, open '(.*)(elm-package\.json)'/,
+          /ENOENT: no such file or directory, open '(.*)(elm-package\.json)'/
         );
     });
 
@@ -90,29 +85,38 @@ describe("ElmViewEngine", () => {
       mockHelper.deleteExternalViewSync();
 
       // Test/Assert
-      return engine
-        .compile()
-        .should.be.rejected();
+      return engine.compile().should.be.rejected();
     }).timeout(COMPILE_TIMEOUT); // If dependencies have to be downloaded it might take some time
 
-    it("successfully compiles a multi-part module (e.g: UI.MyModule)", async () => {
-      // Prepare
-      await mockHelper.importMultipartModule();
+    context("when using multipart module names", () => {
+      let multipartEngine: ElmViewEngine;
 
-      // Test
-      const modulePath = await engine.compile();
-
-      // Assert
-      modulePath.should.be.a
-        .String()
-        .and.be.equal(
-          path.join(engineOptions.viewsDirPath, "views.compiled.js"),
+      before(async () => {
+        await mockHelper.importMultipartModule();
+        multipartEngine = new ElmViewEngine(
+          new Options(
+            path.join(mockHelper.viewsPath, "UI"),
+            mockHelper.projectPath
+          )
         );
+      });
 
-      const moduleExists = fs.existsSync(modulePath);
-      moduleExists.should.be.true();
-    }).timeout(COMPILE_TIMEOUT);
-    
+      it("successfully compiles the views", async () => {
+        // Test
+        const modulePath = await multipartEngine.compile();
+
+        // Assert
+        modulePath.should.be.a
+          .String()
+          .and.be.equal(
+            path.join(multipartEngine.options.viewsDirPath, "views.compiled.js")
+          );
+
+        const moduleExists = fs.existsSync(modulePath);
+        moduleExists.should.be.true();
+      }).timeout(COMPILE_TIMEOUT);
+    });
+
     it("compiles to valid elm code and outputs the module's js file", async () => {
       // Test
       const modulePath = await engine.compile();
@@ -121,7 +125,7 @@ describe("ElmViewEngine", () => {
       modulePath.should.be.a
         .String()
         .and.be.equal(
-          path.join(engineOptions.viewsDirPath, "views.compiled.js"),
+          path.join(engineOptions.viewsDirPath, "views.compiled.js")
         );
 
       const moduleExists = fs.existsSync(modulePath);
@@ -152,10 +156,12 @@ describe("ElmViewEngine", () => {
   });
 
   describe("#getView()", () => {
-    before(function(this: Mocha.IHookCallbackContext) {
+    before(async function(this: Mocha.IHookCallbackContext) {
       this.timeout(COMPILE_TIMEOUT);
       return engine.compile();
     });
+
+    after(() => mockHelper.restoreFiles());
 
     it("throws if templates were not compiled", () => {
       // Prepare
@@ -164,7 +170,7 @@ describe("ElmViewEngine", () => {
       return uncompiled
         .getView("MyView")
         .should.be.rejectedWith(
-          "Views need to be compiled before rendering them",
+          "Views need to be compiled before rendering them"
         );
     });
 
@@ -183,18 +189,18 @@ describe("ElmViewEngine", () => {
     it("throws if the view doesn't exist", () => {
       return engine
         .getView("ViewDoesntExist")
-        .should.be.rejectedWith("View was not found");
+        .should.be.rejectedWith("View was not found: ViewDoesntExist");
     });
 
     it("returns the matching view that doesn't have a context", async () => {
       // Prepare
       const usersExpectedView = fs.readFileSync(
         path.join(FIXTURES_PATH, "UsersView.html"),
-        "UTF-8",
+        "UTF-8"
       );
       const otherExpectedView = fs.readFileSync(
         path.join(FIXTURES_PATH, "OtherView.html"),
-        "UTF-8",
+        "UTF-8"
       );
 
       // Test
@@ -203,10 +209,10 @@ describe("ElmViewEngine", () => {
 
       // Assert
       removeFormat(usersActualView).should.be.equal(
-        removeFormat(usersExpectedView),
+        removeFormat(usersExpectedView)
       );
       removeFormat(otherActualView).should.be.equal(
-        removeFormat(otherExpectedView),
+        removeFormat(otherExpectedView)
       );
     });
 
@@ -225,7 +231,7 @@ describe("ElmViewEngine", () => {
       const context = { simpleName: "test passed" };
       const contextExpectedView = fs.readFileSync(
         path.join(FIXTURES_PATH, "HasContextView.html"),
-        "UTF-8",
+        "UTF-8"
       );
 
       // Test/Assert
@@ -257,12 +263,12 @@ describe("ElmViewEngine", () => {
           engine
             .getView("HasContextView", c)
             .should.eventually.be.a.String()
-            .which.containEql(c.simpleName),
-        ),
+            .which.containEql(c.simpleName)
+        )
       );
     });
 
-    context("if compiled views js module exists", () => {
+    context("when compiled views js module exists", () => {
       let moduleExistEngine: ElmViewEngine;
       before(() => mockHelper.importCompiledViews());
 
@@ -287,7 +293,7 @@ describe("ElmViewEngine", () => {
         await mockHelper.importCompiledViews();
         const usersExpectedView = fs.readFileSync(
           path.join(FIXTURES_PATH, "UsersView.html"),
-          "UTF-8",
+          "UTF-8"
         );
 
         // Test
@@ -295,7 +301,7 @@ describe("ElmViewEngine", () => {
 
         // Assert
         removeFormat(usersActualView).should.be.equal(
-          removeFormat(usersExpectedView),
+          removeFormat(usersExpectedView)
         );
       });
     });
@@ -322,11 +328,50 @@ describe("ElmViewEngine", () => {
           setTimeout(
             () =>
               resolve(watchEngine.getView("UsersView").should.be.rejected()),
-            10000,
+            10000
           );
         });
         return Promise.all([shouldRender, shouldFail]);
       }).timeout(COMPILE_TIMEOUT);
+    });
+
+    context("when views have multipart module names", () => {
+      let multipartEngine: ElmViewEngine;
+
+      before(async function(this: Mocha.IHookCallbackContext) {
+        this.timeout(COMPILE_TIMEOUT);
+        await mockHelper.restoreFiles();
+        await mockHelper.importMultipartModule();
+        multipartEngine = new ElmViewEngine(
+          new Options(
+            path.join(mockHelper.viewsPath, "UI"),
+            mockHelper.projectPath
+          )
+        );
+
+        return multipartEngine.compile();
+      });
+
+      it("successfully gets the view when passing the full module name", () => {
+        return multipartEngine
+          .getView("UI.MultipartModule")
+          .should.be.fulfilled();
+      });
+
+      it("successfully gets the view when passing only the last part of the module name", () => {
+        return multipartEngine.getView("MultipartModule").should.be.fulfilled();
+      });
+
+      it("returns the same view whether using fully or not fully qualified module name", async () => {
+        const v1 = await multipartEngine
+          .getView("UI.MultipartModule")
+          .should.be.fulfilled();
+        const v2 = await multipartEngine
+          .getView("MultipartModule")
+          .should.be.fulfilled();
+
+        return removeFormat(v1).should.be.equal(removeFormat(v2));
+      });
     });
 
     const removeFormat = (html: string) =>

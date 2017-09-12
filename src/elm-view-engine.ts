@@ -55,7 +55,10 @@ export default class ElmViewEngine {
     ])
       .then(async result => {
         const depsCopy = this.copyDependenciesFromProject(result[2]);
-        const elmCode = await this.compileAndOutputTemplate(result[0], result[1]);
+        const elmCode = await this.compileAndOutputTemplate(
+          result[0],
+          result[1]
+        );
         const modulePath = await this.saveMainElmFile(result[2], elmCode);
 
         // Waiting for dependencies to be copied before compiling
@@ -170,10 +173,6 @@ export default class ElmViewEngine {
     );
   }
 
-  // private stopWatchingCompiledViews() {
-  //   this.watcher.removeAllListeners();
-  // }
-
   private cleanGenerated(): Promise<void> {
     return new Promise((resolve, reject) => {
       rimraf(ElmViewEngine.GENERATION_DIR_BASE_PATH + "*", err2 => {
@@ -216,11 +215,21 @@ export default class ElmViewEngine {
     });
   }
 
-  private async compileAndOutputTemplate(files: string[], templateContent: string): Promise<string> {
-    const modules = await Promise.all(files
-      .filter(f => f.endsWith(".elm"))
-      .map(f => path.join(this._options.viewsDirPath, f))
-      .map(this.getModuleName));
+  private async compileAndOutputTemplate(
+    files: string[],
+    templateContent: string
+  ): Promise<string> {
+    const modules = await Promise.all(
+      files
+        .filter(f => f.endsWith(".elm"))
+        .map(f => path.join(this._options.viewsDirPath, f))
+        .map(this.getModuleName)
+    );
+
+    hbs.registerHelper("lastPart", (str: string, sep: string) => {
+      const parts = str.split(sep);
+      return parts[parts.length-1];
+    });
     
     const template = hbs.compile(templateContent);
     return template({ modules });
@@ -233,7 +242,9 @@ export default class ElmViewEngine {
         reader.close();
         const parts = line.split(" ");
         if (parts.length < 4) {
-          return reject(new Error(`Impossible to extract module name from ${file}`));
+          return reject(
+            new Error(`Impossible to extract module name from ${file}`)
+          );
         }
 
         return resolve(parts[1]);
@@ -405,19 +416,24 @@ export default class ElmViewEngine {
     reject: (reason?: any) => void,
     port: any
   ): number {
+    // Reusing ids from past requests
     const recycledId = this.requestsRecyclingPool.shift();
     const reqId =
       recycledId !== undefined ? recycledId : this.getViewRequests.length;
 
+    // Callback to be called when the view result is ready
     const cb = (view: ViewResult) => {
       if (view.id !== reqId) {
         return;
       }
 
+      // Putting the req id aside for reuse and voiding it in the requests array
       this.requestsRecyclingPool.push(reqId);
       this.getViewRequests[reqId] = undefined;
 
       port.unsubscribe(cb);
+
+      // Returning the result to the caller through promise callbacks
       if (view.error) {
         return reject(new Error(view.error));
       }

@@ -6,17 +6,17 @@ import * as rimraf from "rimraf";
 
 export default class MockProjectHelper {
   public static createProject = async (
-    fixturesPath: string,
+    fixturesPath: string
   ): Promise<MockProjectHelper> => {
     const projectPath = path.join(
       process.cwd(),
-      fs.mkdtempSync("fake_project_"),
+      fs.mkdtempSync("fake_project_")
     );
     const viewsDirPath = path.join(projectPath, "views");
     const projHelper = new MockProjectHelper(
       projectPath,
       viewsDirPath,
-      fixturesPath,
+      fixturesPath
     );
 
     return Promise.all([
@@ -32,7 +32,7 @@ export default class MockProjectHelper {
   private constructor(
     private readonly _projectPath: string,
     private readonly _viewsPath: string,
-    private readonly fixturesPath: string,
+    private readonly fixturesPath: string
   ) {
     this.externalViewDirPath = path.join(_projectPath, "..", "external_views");
   }
@@ -46,12 +46,14 @@ export default class MockProjectHelper {
   }
 
   public restoreFiles = () => {
-    return Promise.all([
-      this.importPackageConfig(),
-      this.importViews(),
-      this.importExternalView(),
-      this.deleteCompiledViews(),
-    ]);
+    return this.deleteViewsDir().then(() =>
+      Promise.all([
+        this.importPackageConfig(),
+        this.importViews(),
+        this.importExternalView(),
+        this.deleteCompiledViews(),
+      ])
+    );
   };
 
   public deleteViewsDir = (): Promise<any> => {
@@ -80,7 +82,7 @@ export default class MockProjectHelper {
     });
   };
 
-  public importCompiledViews(invalid: boolean = false): Promise<any> {
+  public importCompiledViews = (invalid: boolean = false): Promise<any> => {
     return new Promise((resolve, reject) => {
       const filename = invalid
         ? "views.compiled.invalid.js"
@@ -98,34 +100,38 @@ export default class MockProjectHelper {
           fs.rename(
             moduleProjPath,
             finalModulePath,
-            this.handleCopyError(resolve, reject),
+            this.handleCopyError(resolve, reject)
           );
         } else {
-          return resolve()
+          return resolve();
         }
       });
     });
-  }
-  
-  public importMultipartModule(): Promise<any> {
+  };
+
+  public importMultipartModule = (): Promise<any> => {
     return new Promise((resolve, reject) => {
       const filename = "MultipartModule.elm";
       const moduleSourcePath = path.join(this.fixturesPath, filename);
       const destinationPath = path.join(this.viewsPath, "UI");
 
-      fs.mkdir(destinationPath, (err) => {
+      fs.mkdir(destinationPath, err => {
         if (err) {
           return reject(err);
         }
 
-        copy([moduleSourcePath, destinationPath], true, this.handleCopyError(resolve, reject));
+        copy(
+          [moduleSourcePath, destinationPath],
+          true,
+          this.handleCopyError(resolve, reject)
+        );
       });
     });
-  }
+  };
 
   private handleCopyError(
     resolve: (value?: any | PromiseLike<any>) => void,
-    reject: (reason?: any) => void,
+    reject: (reason?: any) => void
   ) {
     return (error: any) => {
       if (error) {
@@ -143,12 +149,12 @@ export default class MockProjectHelper {
         copy(
           files
             .filter(
-              f => f.endsWith("View.elm") && !f.endsWith("InvalidView.elm"),
+              f => f.endsWith("View.elm") && !f.endsWith("InvalidView.elm")
             )
             .map(f => path.join(this.fixturesPath, f))
             .concat([this._viewsPath]),
           true,
-          this.handleCopyError(resolve, reject),
+          this.handleCopyError(resolve, reject)
         );
       } catch (err) {
         if (err.code === "EEXIST") {
@@ -175,7 +181,7 @@ export default class MockProjectHelper {
             this.externalViewDirPath,
           ],
           true,
-          this.handleCopyError(resolve, reject),
+          this.handleCopyError(resolve, reject)
         );
       }
     });
@@ -186,7 +192,7 @@ export default class MockProjectHelper {
       copy(
         [path.join(this.fixturesPath, "elm-package.json"), this._projectPath],
         true,
-        this.handleCopyError(resolve, reject),
+        this.handleCopyError(resolve, reject)
       );
     });
   }
@@ -198,7 +204,7 @@ export default class MockProjectHelper {
         path.join(this._projectPath, "elm-stuff"),
         () => {
           resolve();
-        } /* No reject if no dependencies: they'll get dl */,
+        } /* No reject if no dependencies: they'll get dl */
       );
     });
   }

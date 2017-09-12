@@ -80,13 +80,12 @@ update msg model =
 
 getViewHtml : Model -> Context -> String -> (Maybe Int -> GetHtmlResult)
 getViewHtml views context name =
-    let
-        view =
-            Dict.get name views
-    in
-        view
-            |> Maybe.map (renderView context)
-            |> Maybe.withDefault (GetHtmlResult (Just "View was not found") Nothing)
+    String.split "." name
+        |> List.reverse
+        |> List.head
+        |> Maybe.andThen (\n -> Dict.get n views)
+        |> Maybe.map (renderView context)
+        |> Maybe.withDefault (GetHtmlResult (Just <| "View was not found: " ++ name) Nothing)
 
 
 renderView : Context -> (Context -> Result String (Html ())) -> (Maybe Int -> GetHtmlResult)

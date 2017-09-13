@@ -1,3 +1,19 @@
+#### 2.1.1 (2017-09-13)
+
+##### Continuous Integration
+
+* **travis:**
+  * Improved build times ([8677f4e9](https://github.com/OzTK/elm-template-engine/commit/8677f4e98d9e7d00fe802135b3306cea833bdbb4))
+
+##### Bug Fixes
+
+* Fixed support for multipart views module names ([7fe9f17e](https://github.com/OzTK/elm-template-engine/commit/7fe9f17e79942c53ecadfb07cc08959cc2e97765))
+
+##### Tests
+
+* Added tests to cover more cases ([d09a42ad](https://github.com/OzTK/elm-template-engine/commit/d09a42ad54db2ffe2aecca62d93705a05fba0449))
+* Adapting to non elm-depending environment ([bace5711](https://github.com/OzTK/elm-template-engine/commit/bace57110632d9dac955917b3f9190b33a79e572))
+
 ### 2.1.0 (2017-09-08)
 
 ##### Chores

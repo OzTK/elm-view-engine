@@ -4,6 +4,7 @@
   "description": "Renders elm views from a directory of elm modules. This can and is meant to be plugged into Express as a template engine.",
   "main": "index.js",
   "readme": "README.md",
+  "homepage": "https://oztk.github.io/elm-view-engine",
   "scripts": {
     "clean": "rimraf lib test/*.{js,js.map} src/*.{js,js.map} .nyc_output coverage",
     "prebuild": "npm run clean",

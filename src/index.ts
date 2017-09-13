@@ -83,7 +83,6 @@ export async function __express(
   } catch (err) {
     if (callback) {
       callback(err);
-      return "";
     }
     throw err;
   }

@@ -164,11 +164,9 @@ export default class ElmViewEngine {
   private watchCompiledViews() {
     this.watcher = fs.watch(
       path.join(this._options.compilePath, ElmViewEngine.OUTPUT_JS_FILENAME),
-      e => {
-        if (e === "change" || e === "rename") {
-          this.isUpdated = true;
-          this.lastCompileError = undefined;
-        }
+      () => {
+        this.isUpdated = true;
+        this.lastCompileError = undefined;
       }
     );
   }
@@ -228,9 +226,9 @@ export default class ElmViewEngine {
 
     hbs.registerHelper("lastPart", (str: string, sep: string) => {
       const parts = str.split(sep);
-      return parts[parts.length-1];
+      return parts[parts.length - 1];
     });
-    
+
     const template = hbs.compile(templateContent);
     return template({ modules });
   }

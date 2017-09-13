@@ -131,6 +131,18 @@ describe("ElmViewEngine", () => {
       const moduleExists = fs.existsSync(modulePath);
       moduleExists.should.be.true();
     }).timeout(COMPILE_TIMEOUT);
+    
+    it("compiles twice in a row giving the same result", async () => {
+      // Test
+      const module1Path = await engine.compile();
+      const compilation1 = fs.readFileSync(module1Path, "UTF-8");
+      const module2Path = await engine.compile();
+      const compilation2 = fs.readFileSync(module2Path, "UTF-8");
+
+      // Assert
+      module1Path.should.be.equal(module2Path);
+      compilation1.should.be.equal(compilation2);
+    }).timeout(COMPILE_TIMEOUT);
   });
 
   describe("#needsCompilation()", () => {
@@ -153,6 +165,14 @@ describe("ElmViewEngine", () => {
       // Test/Assert
       return engine.needsCompilation().should.eventually.be.false();
     });
+
+    it("returns false after a successful compilation", async () => {
+      // Prepare
+      await engine.compile();
+
+      // Test/Assert
+      return engine.needsCompilation().should.eventually.be.false();
+    }).timeout(COMPILE_TIMEOUT);
   });
 
   describe("#getView()", () => {

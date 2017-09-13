@@ -16,11 +16,11 @@ describe("module entry point", () => {
 
   before(async () => {
     mockProject = await MockProjectHelper.createProject(
-      path.join(__dirname, "fixtures"),
+      path.join(__dirname, "fixtures")
     );
 
     engineStub = new ElmViewEngine(
-      new Options(mockProject.viewsPath, mockProject.projectPath),
+      new Options(mockProject.viewsPath, mockProject.projectPath)
     );
     stubEngine(engineStub);
   });
@@ -37,8 +37,9 @@ describe("module entry point", () => {
       return __express(
         path.join(mockProject.viewsPath, "UsersView"),
         {},
+        (err: any) => err
       ).should.be.rejectedWith(
-        "#configure must be called before calling #__express",
+        "#configure must be called before calling #__express"
       );
     });
 
@@ -49,7 +50,7 @@ describe("module entry point", () => {
 
         try {
           await configure(
-            new Options(mockProject.viewsPath, mockProject.projectPath),
+            new Options(mockProject.viewsPath, mockProject.projectPath)
           );
           throw new Error("configure should fail");
         } catch (err) {
@@ -63,8 +64,9 @@ describe("module entry point", () => {
         await __express(
           path.join(mockProject.viewsPath, "OtherView.elm"),
           {},
+          (err: any) => err
         ).should.be.rejectedWith(
-          "The compiled views module is not valid. You should try recompiling.",
+          "The compiled views module is not valid. You should try recompiling."
         );
       });
     });
@@ -77,8 +79,8 @@ describe("module entry point", () => {
       return __express(
         path.join(mockProject.viewsPath, "HasContextView.elm"),
         "paul",
-      ).should.eventually.be.a
-        .String()
+      )
+        .should.eventually.be.a.String()
         .and.containEql("paul");
     });
 
@@ -88,8 +90,8 @@ describe("module entry point", () => {
       await configure(customEngine);
 
       // Test/Assert
-      return __express("Anything.elm", {}).should.be.rejectedWith(
-        "VIEW FAILED",
+      return __express("Anything.elm", {}, err => err).should.be.rejectedWith(
+        "VIEW FAILED"
       );
     });
   });
@@ -109,7 +111,7 @@ describe("module entry point", () => {
 
       // Test/Assert
       const results = configure(engineStub).should.be.rejectedWith(
-        "There is already a compilation in progress",
+        "There is already a compilation in progress"
       );
 
       // Clean
@@ -121,7 +123,7 @@ describe("module entry point", () => {
     it("returns a view engine", () => {
       return configure(engineStub).should.eventually.have.properties(
         "compile",
-        "getView",
+        "getView"
       );
     });
 
@@ -142,14 +144,14 @@ describe("module entry point", () => {
         new ElmViewEngine(
           new Options(mockProject.viewsPath, mockProject.projectPath, {
             anything: "pointless",
-          }),
-        ),
+          })
+        )
       );
 
       // Test/Assert
       return configure(customEngine).should.eventually.have.properties(
         "compile",
-        "getView",
+        "getView"
       );
     });
 
@@ -162,8 +164,8 @@ describe("module entry point", () => {
       });
       const customEngine = stubEngine(
         new ElmViewEngine(
-          new Options(mockProject.viewsPath, mockProject.projectPath, app),
-        ),
+          new Options(mockProject.viewsPath, mockProject.projectPath, app)
+        )
       );
 
       // Test
@@ -187,8 +189,8 @@ describe("module entry point", () => {
           mockProject.viewsPath,
           mockProject.projectPath,
           undefined,
-          true,
-        ),
+          true
+        )
       );
       const time = process.hrtime(start);
 
@@ -204,7 +206,7 @@ describe("module entry point", () => {
       // Test
       const start = process.hrtime();
       const eng = await configure(
-        new Options(mockProject.viewsPath, mockProject.projectPath),
+        new Options(mockProject.viewsPath, mockProject.projectPath)
       );
       const time = process.hrtime(start);
 
@@ -226,7 +228,7 @@ describe("module entry point", () => {
       // Assert
       success.should.be.true();
       return __express("anything.elm", {}).should.be.rejectedWith(
-        "Views need to be compiled before rendering them",
+        "Views need to be compiled before rendering them"
       );
     });
 
@@ -242,10 +244,17 @@ describe("module entry point", () => {
 
 function stubEngine(
   engineToStub: ElmViewEngine,
-  getViewFails: boolean = false,
+  getViewFails: boolean = false
 ) {
   stub(engineToStub, "compile").returns(Promise.resolve());
-  stub(engineToStub, "getView").callsFake((viewName: string, context?: any) => {
+  stub(
+    engineToStub,
+    "getView"
+  ).callsFake((viewName: string, context?: any, cb?: (err?: any) => void) => {
+    if (cb) {
+      cb(getViewFails ? new Error("VIEW FAILED") : undefined);
+    }
+
     return getViewFails
       ? Promise.reject(new Error("VIEW FAILED"))
       : Promise.resolve(viewName + ": " + context);

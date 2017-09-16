@@ -243,7 +243,7 @@ describe("ElmViewEngine", () => {
       // Test/Assert
       return engine
         .getView("HasContextView", fakeContext)
-        .should.be.rejectedWith("Invalid context for this view");
+        .should.be.rejectedWith("Invalid context for this view: Expecting an object with a field named `simpleName` but instead got: {\"fakeProperty\":\"fakeValue\"}");
     });
 
     it("returns the matching view rendering its context", () => {

@@ -98,7 +98,7 @@ renderView context view =
                 |> GetHtmlResult Nothing
 
         Err error ->
-            GetHtmlResult (Just "Invalid context for this view") Nothing
+            GetHtmlResult (Just <| "Invalid context for this view: " ++ error) Nothing
 
 
 map : (ctx -> Html msg) -> Json.Decode.Decoder ctx -> Context -> Result String (Html ())

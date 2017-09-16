@@ -1,10 +1,10 @@
 {
   "name": "elm-view-engine",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "description": "Renders elm views from a directory of elm modules. This can and is meant to be plugged into Express as a template engine.",
   "main": "index.js",
   "readme": "README.md",
-  "homepage": "https://oztk.github.io/elm-view-engine",
+  "homepage": "https://github.com/OzTK/elm-template-engine#readme",
   "scripts": {
     "clean": "rimraf lib test/*.{js,js.map} src/*.{js,js.map} .nyc_output coverage",
     "prebuild": "npm run clean",
@@ -34,7 +34,6 @@
   "bugs": {
     "url": "https://github.com/OzTK/elm-template-engine/issues"
   },
-  "homepage": "https://github.com/OzTK/elm-template-engine#readme",
   "nyc": {
     "extension": [
       ".ts"

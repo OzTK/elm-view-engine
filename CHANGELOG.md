@@ -1,3 +1,13 @@
+#### 2.1.2 (2017-09-16)
+
+##### Documentation Changes
+
+* Added homepage link ([4444e9bb](https://github.com/OzTK/elm-template-engine/commit/4444e9bb977a77eb3bc27b04d69109122e2e03d1))
+
+##### Bug Fixes
+
+* **errors:** Showing elm error message when passing an invalid context ([5c41e893](https://github.com/OzTK/elm-template-engine/commit/5c41e893bc062156ca2344bedf9a78c44b1ad2ba))
+
 #### 2.1.1 (2017-09-13)
 
 ##### Continuous Integration

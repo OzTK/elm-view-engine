@@ -8,7 +8,7 @@ ignore:
           Vulnerability just introduced. Coveralls only used for CI (no
           dependency on prod)
         expires: '2017-09-01T16:29:40.974Z'
-      elm > request > tunnel-agent:
+    - elm > request > tunnel-agent:
         reason: Vulnerability just introduced. waiting for a fix
         expires: '2017-09-01T16:50:01.489Z'
 patch: {}

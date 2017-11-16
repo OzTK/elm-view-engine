@@ -164,6 +164,7 @@ export default class ElmViewEngine {
   private watchCompiledViews() {
     this.watcher = fs.watch(
       path.join(this._options.compilePath, ElmViewEngine.OUTPUT_JS_FILENAME),
+      { persistent: false },
       () => {
         this.isUpdated = true;
         this.lastCompileError = undefined;

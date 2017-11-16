@@ -36,7 +36,7 @@ describe("ElmViewEngine", () => {
   describe("#compile()", () => {
     afterEach(() => mockHelper.restoreFiles());
 
-    it("throws if no valid hbs template", () => {
+    it("throws if no valid hbs template", async () => {
       // Prepare
       // Temporarily renaming hbs file
       fs.renameSync(HBS_TEMPLATE_PATH, HBS_NONEXISTENT_TEMPLATE_PATH);
@@ -47,7 +47,7 @@ describe("ElmViewEngine", () => {
       // Cleanup
       const cleanup = () =>
         fs.renameSync(HBS_NONEXISTENT_TEMPLATE_PATH, HBS_TEMPLATE_PATH);
-      compiler.then(cleanup).catch(cleanup);
+      await compiler.then(cleanup).catch(cleanup);
 
       // Assert
       return compiler.should.be.rejectedWith(

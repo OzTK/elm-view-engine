@@ -11,4 +11,11 @@ ignore:
     - elm > request > tunnel-agent:
         reason: Vulnerability just introduced. waiting for a fix
         expires: '2017-09-01T16:50:01.489Z'
+  'npm:lodash:20180130':
+    - node-elm-compiler > lodash:
+        reason: Dependency to elm 0.18
+        expires: '2019-01-08T14:05:12.337Z'
+    - node-elm-compiler > find-elm-dependencies > lodash:
+        reason: Dependency to elm 0.18
+        expires: '2019-01-08T14:05:12.337Z'
 patch: {}

@@ -4,7 +4,7 @@ import ElmViewEngine from "./elm-view-engine";
 import Options from "./elm-view-options";
 
 let currentOptions: Options | undefined | null;
-let engine: ElmViewEngine;
+let engine: ElmViewEngine | undefined;
 let isCompiling = false;
 
 export async function configure(
@@ -20,6 +20,7 @@ export async function configure(
 
   const configureExpressApp = () => {
     if (
+      engine &&
       engine.options.expressApp &&
       typeof engine.options.expressApp.set === "function" &&
       typeof engine.options.expressApp.engine === "function"

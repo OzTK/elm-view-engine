@@ -23,12 +23,12 @@ export default class ElmViewEngine {
   private static readonly TEMPLATE_PATH = path.join(__dirname, "Main.elm.hbs");
   private static readonly OUTPUT_JS_FILENAME = "views.compiled.js";
 
-  private worker: ElmComponent<any>;
+  private worker?: ElmComponent<any>;
   private getViewRequests: Array<((view: ViewResult) => void) | undefined> = [];
   private requestsRecyclingPool: number[] = [];
   private lastCompileError?: Error;
-  private isUpdated: boolean;
-  private watcher: fs.FSWatcher;
+  private isUpdated?: boolean;
+  private watcher?: fs.FSWatcher;
 
   private debug: createDebug.IDebugger;
 
@@ -139,7 +139,7 @@ export default class ElmViewEngine {
         );
         try {
           delete require.cache[require.resolve(jsModulePath)];
-          this.worker = require(jsModulePath).Main.worker();
+          this.worker = require(jsModulePath).Main.worker() as ElmComponent<any>;
         } catch (error) {
           this.lastCompileError = error;
           return reject(new ImportCompiledViewsError(error));

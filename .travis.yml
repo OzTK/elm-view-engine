@@ -19,7 +19,7 @@ before_install:
 
 install:
   - npm i -g elm@0.18
-  - npm install
+  - npm ci
   - npm run snyk:t
   - cd test/fixtures
   - travis_retry elm-package install -y

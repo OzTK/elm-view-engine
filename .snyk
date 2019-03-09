@@ -13,9 +13,23 @@ ignore:
         expires: '2017-09-01T16:50:01.489Z'
   'npm:lodash:20180130':
     - node-elm-compiler > lodash:
-        reason: Dependency to elm 0.18
-        expires: '2019-01-08T14:05:12.337Z'
+        reason: Impossible to upgrade to elm 0.19
+        expires: '2019-04-08T11:31:10.950Z'
     - node-elm-compiler > find-elm-dependencies > lodash:
-        reason: Dependency to elm 0.18
-        expires: '2019-01-08T14:05:12.337Z'
+        reason: Impossible to upgrade to elm 0.19
+        expires: '2019-04-08T11:31:10.950Z'
+  SNYK-JS-LODASH-73638:
+    - node-elm-compiler > lodash:
+        reason: Impossible to upgrade to elm 0.19
+        expires: '2019-04-08T11:31:10.950Z'
+    - node-elm-compiler > find-elm-dependencies > lodash:
+        reason: Impossible to upgrade to elm 0.19
+        expires: '2019-04-08T11:31:10.950Z'
+  SNYK-JS-LODASH-73639:
+    - node-elm-compiler > lodash:
+        reason: Impossible to upgrade to elm 0.19
+        expires: '2019-04-08T11:31:10.950Z'
+    - node-elm-compiler > find-elm-dependencies > lodash:
+        reason: Impossible to upgrade to elm 0.19
+        expires: '2019-04-08T11:31:10.950Z'
 patch: {}
